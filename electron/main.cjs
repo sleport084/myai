@@ -281,9 +281,11 @@ function sendUpdaterStatus(payload = {}) {
 }
 
 async function bootstrapBackend(port) {
-  process.env.BAILONGMA_USER_DIR ||= USER_DIR
-  process.env.BAILONGMA_RESOURCES_DIR ||= RESOURCE_ROOT
+  // 确保后端用同一个 USER_DIR（强制覆盖，不用 ||= 避免残留值）
+  process.env.BAILONGMA_USER_DIR = USER_DIR
+  process.env.BAILONGMA_RESOURCES_DIR = RESOURCE_ROOT
   process.env.BAILONGMA_PORT = String(port)
+  console.log('[main] 后端启动: USER_DIR=' + USER_DIR + ', token文件=' + path.join(USER_DIR, '.cloud-auth-token') + ', 存在=' + fs.existsSync(path.join(USER_DIR, '.cloud-auth-token')))
   await import(pathToFileURL(BACKEND_ENTRY).href)
 }
 
@@ -822,9 +824,16 @@ app.whenReady().then(async () => {
       ipcMain.once('cloud-auth-success', (_e, dataStr) => {
         try {
           const data = JSON.parse(dataStr)
+          // 写到 USER_DIR（主路径）
           fs.writeFileSync(TOKEN_FILE, data.token, { mode: 0o600 })
           fs.writeFileSync(path.join(USER_DIR, '.cloud-auth-user'), JSON.stringify(data.user), { mode: 0o600 })
-          console.log('[main] 云端登录成功:', data.user?.username)
+          // 也写到 CODE_ROOT（后端开发模式的回退路径）
+          try { fs.writeFileSync(path.join(CODE_ROOT, '.cloud-auth-token'), data.token, { mode: 0o600 }) } catch {}
+          // 也写到 APPDATA/myai（Windows 回退路径）
+          if (process.env.APPDATA) {
+            try { fs.writeFileSync(path.join(process.env.APPDATA, 'myai', '.cloud-auth-token'), data.token, { mode: 0o600 }) } catch {}
+          }
+          console.log('[main] 云端登录成功:', data.user?.username, 'token 已写入', TOKEN_FILE)
         } catch (err) {
           console.error('[main] 云端登录数据保存失败:', err)
         }

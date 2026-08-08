@@ -22,8 +22,17 @@ function findToken() {
     path.join(paths.userDir, '.cloud-auth-token'),
     path.join(process.env.BAILONGMA_USER_DIR || paths.userDir, '.cloud-auth-token'),
   ]
-  if (process.env.APPDATA) candidates.push(path.join(process.env.APPDATA, 'MyAI', '.cloud-auth-token'))
-  if (process.env.HOME) candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'MyAI', '.cloud-auth-token'))
+  // Windows: %APPDATA%\myai 或 %APPDATA%\MyAI（大小写都查）
+  if (process.env.APPDATA) {
+    candidates.push(path.join(process.env.APPDATA, 'myai', '.cloud-auth-token'))
+    candidates.push(path.join(process.env.APPDATA, 'MyAI', '.cloud-auth-token'))
+    candidates.push(path.join(process.env.APPDATA, 'xiaobailong', '.cloud-auth-token'))
+  }
+  // macOS: ~/Library/Application Support/myai 或 MyAI
+  if (process.env.HOME) {
+    candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'myai', '.cloud-auth-token'))
+    candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'MyAI', '.cloud-auth-token'))
+  }
   for (const p of candidates) {
     try { if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim() } catch {}
   }
