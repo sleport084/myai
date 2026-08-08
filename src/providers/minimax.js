@@ -1,6 +1,41 @@
 import { BaseProvider } from './base.js'
 import { recordDailyUsage, getDailyUsage } from '../quota.js'
 
+// 图片 prompt 增强：自动补充质量/细节/光照/分辨率关键词，
+// 让生成的图片质量更高。只在用户没指定这些维度时追加。
+const QUALITY_KEYWORDS = [
+  '高清', '4K', '8K', 'HD', 'high quality', 'masterpiece', 'best quality',
+  'detailed', '超高清', '精细', '专业摄影', 'photorealistic', 'ultra-detailed',
+]
+
+const STYLE_KEYWORDS = [
+  '油画', '水彩', '素描', '动漫', '二次元', '写实', '摄影', '插画',
+  '3D', '赛博朋克', '国风', '水墨', 'pixel art', 'oil painting', 'watercolor',
+  'anime', 'realistic', 'sketch', 'digital art', 'cinematic',
+]
+
+const NEGATIVE_PROMPT = 'blurry, low quality, distorted, deformed, ugly, watermark, text, signature, low resolution, jpeg artifacts'
+
+function enhanceImagePrompt(prompt) {
+  if (!prompt) return prompt
+  const lower = prompt.toLowerCase()
+  // 检测用户是否已经指定了质量/风格关键词
+  const hasQuality = QUALITY_KEYWORDS.some(k => lower.includes(k.toLowerCase()))
+  const hasStyle = STYLE_KEYWORDS.some(k => lower.includes(k.toLowerCase()))
+
+  let enhanced = prompt.trim()
+
+  // 补充质量关键词
+  if (!hasQuality) {
+    enhanced += ', ultra-detailed, high quality, masterpiece, best quality, 4K resolution, professional lighting, sharp focus'
+  }
+
+  // 补充负面提示词（MiniMax 支持 negative_prompt 间接控制）
+  enhanced += ` --no ${NEGATIVE_PROMPT}`
+
+  return enhanced
+}
+
 const CAPABILITIES = ['tts', 'music', 'lyrics', 'image']
 
 const DAILY_LIMITS = {
@@ -98,9 +133,11 @@ export class MinimaxProvider extends BaseProvider {
   // ── Image Generation ──
   async #image({ prompt, aspect_ratio = '1:1', n = 1 }) {
     if (!prompt) throw new Error('image: 缺少 prompt 参数')
+    // prompt 增强：自动追加高质量关键词（如果用户没指定风格/质量）
+    const enhanced = enhanceImagePrompt(prompt)
     const data = await this.request('/image_generation', {
       model: 'image-01',
-      prompt,
+      prompt: enhanced,
       aspect_ratio,
       n,
       response_format: 'url',

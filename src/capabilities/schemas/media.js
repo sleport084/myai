@@ -130,11 +130,11 @@ Write a vivid, concrete prompt: subject, action, camera movement, lighting, styl
     type: 'function',
     function: {
       name: 'generate_image',
-      description: 'Generate images from a text description. Daily image generation limit is 50.',
+      description: 'Generate high-quality images from a text description. Write a detailed, vivid prompt with subject, style, lighting, mood, and composition for best results. Daily image generation limit is 50.',
       parameters: {
         type: 'object',
         properties: {
-          prompt: { type: 'string', description: 'Image description. More detail is better.' },
+          prompt: { type: 'string', description: 'Detailed image description. Include subject, art style, lighting, color palette, mood, camera angle, and composition for best quality. Example: "一只橘色猫咪坐在窗台，阳光透过窗帘洒下，毛发清晰可见，温馨氛围，写实风格，专业摄影，柔和自然光，浅景深" rather than just "画一只猫".' },
           aspect_ratio: { type: 'string', description: 'Aspect ratio, optional values: 1:1 default, 16:9, 4:3, 3:4, 9:16.' },
           n: { type: 'number', description: 'Number of images to generate, 1-4, default 1.' },
         },
