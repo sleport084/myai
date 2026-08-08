@@ -1,69 +1,45 @@
 // relay-poll.js — 桌面端中继轮询模块
 // 桌面端启动后自动轮询管理后台，拉取手机端发来的消息，
-// 通过本地 /message API 处理后回复。
-// 这样手机端不需要局域网也不需要公网IP，通过云端中继即可对话。
-import { getCachedToken, getCachedUser } from './cloud-auth.js'
-import { paths } from './paths.js'
+// 通过本地 SSE 事件流捕获 AI 回复，再发回管理后台。
 import fs from 'fs'
 import path from 'path'
+import { paths } from './paths.js'
 
 const ADMIN_API = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
-const POLL_INTERVAL_MS = 3000  // 每 3 秒轮询一次
+const POLL_INTERVAL_MS = 3000
+const REPLY_TIMEOUT_MS = 120000  // AI 回复最长等待 2 分钟
+const SSE_RECONNECT_DELAY = 2000
 
 let polling = false
 let localPort = 0
 let timer = null
 let tokenWarned = false
+let processing = new Set()  // 正在处理中的消息 ID
 
-// 多路径 token 查找（兼容 main.cjs 写入路径和 paths.userDir）
+// 多路径 token 查找
 function findToken() {
-  // 路径1: paths.userDir（后端标准路径）
-  const p1 = path.join(paths.userDir, '.cloud-auth-token')
-  if (fs.existsSync(p1)) {
-    try { return fs.readFileSync(p1, 'utf-8').trim() } catch {}
-  }
-  // 路径2: Electron userData 目录（通过环境变量）
-  const userData = process.env.BAILONGMA_USER_DIR || paths.userDir
-  const p2 = path.join(userData, '.cloud-auth-token')
-  if (fs.existsSync(p2)) {
-    try { return fs.readFileSync(p2, 'utf-8').trim() } catch {}
-  }
-  // 路径3: Windows %APPDATA%\MyAI
-  const appData = process.env.APPDATA
-  if (appData) {
-    const p3 = path.join(appData, 'MyAI', '.cloud-auth-token')
-    if (fs.existsSync(p3)) {
-      try { return fs.readFileSync(p3, 'utf-8').trim() } catch {}
-    }
-  }
-  // 路径4: 仓库根目录（开发模式）
-  const p4 = path.resolve('.cloud-auth-token')
-  if (fs.existsSync(p4)) {
-    try { return fs.readFileSync(p4, 'utf-8').trim() } catch {}
+  const candidates = [
+    path.join(paths.userDir, '.cloud-auth-token'),
+    path.join(process.env.BAILONGMA_USER_DIR || paths.userDir, '.cloud-auth-token'),
+  ]
+  if (process.env.APPDATA) candidates.push(path.join(process.env.APPDATA, 'MyAI', '.cloud-auth-token'))
+  if (process.env.HOME) candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'MyAI', '.cloud-auth-token'))
+  for (const p of candidates) {
+    try { if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim() } catch {}
   }
   return null
 }
 
-/**
- * 启动中继轮询
- * @param {number} port - 本地后端 HTTP 端口
- */
 export function startRelayPoller(port) {
   localPort = port
   if (polling) return
   polling = true
   console.log('[relay] 启动中继轮询，本地端口', port, '，管理后台', ADMIN_API)
-  // 检查 token 是否存在
   const token = findToken()
-  if (token) {
-    console.log('[relay] 云端认证 token 已找到，轮询激活')
-  } else {
-    console.log('[relay] 云端认证 token 未找到，等待登录后自动激活')
-    console.log('[relay] 查找路径:', path.join(paths.userDir, '.cloud-auth-token'), '|', process.env.BAILONGMA_USER_DIR || '(无 BAILONGMA_USER_DIR)')
-  }
+  if (token) console.log('[relay] 云端认证 token 已找到，轮询激活')
+  else console.log('[relay] 云端认证 token 未找到，等待登录后自动激活')
 
   timer = setInterval(pollAndProcess, POLL_INTERVAL_MS)
-  // 立即执行一次
   pollAndProcess()
 }
 
@@ -72,26 +48,132 @@ export function stopRelayPoller() {
   if (timer) { clearInterval(timer); timer = null }
 }
 
+/**
+ * 发消息到本地后端 + 通过 SSE 等待 AI 回复
+ * 模拟桌面端的完整 Turn 生命周期
+ */
+async function sendAndWaitForReply(content) {
+  // 用 SSE 监听回复 + HTTP POST 发消息的组合
+  // SSE 连接先开，确保不漏事件
+  return new Promise(async (resolve) => {
+    let resolved = false
+    let sse = null
+    const timeoutId = setTimeout(() => {
+      if (!resolved) {
+        resolved = true
+        cleanup()
+        resolve('（回复超时，请稍后重试）')
+      }
+    }, REPLY_TIMEOUT_MS)
+
+    function cleanup() {
+      clearTimeout(timeoutId)
+      if (sse) { try { sse.close() } catch {} }
+    }
+
+    function finish(reply) {
+      if (resolved) return
+      resolved = true
+      cleanup()
+      resolve(reply)
+    }
+
+    try {
+      // 1. 连接 SSE 事件流（Node.js 用 HTTP 长连接）
+      const http = await import('http')
+
+      let buffer = ''
+      const req = http.get({
+        hostname: '127.0.0.1',
+        port: localPort,
+        path: '/events',
+        headers: { 'Accept': 'text/event-stream' },
+      }, (resp) => {
+        resp.on('data', (chunk) => {
+          buffer += chunk.toString()
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue
+            try {
+              const event = JSON.parse(line.slice(6))
+
+              // 收到 AI 回复
+              if (event.type === 'response' && event.content) {
+                finish(event.content)
+                return
+              }
+
+              // 工具调用中的进度（不结束，继续等）
+              if (event.type === 'tool_call' || event.type === 'tool_executing') {
+                // AI 在调工具，继续等
+              }
+
+              // 处理被中断
+              if (event.type === 'processing_preempted') {
+                finish('（处理被中断，请重试）')
+                return
+              }
+            } catch {}
+          }
+        })
+
+        resp.on('error', () => {
+          if (!resolved) finish('（SSE 连接断开）')
+        })
+      })
+
+      req.on('error', () => {
+        if (!resolved) finish('（无法连接本地后端）')
+      })
+
+      // 2. 发送消息到后端（触发 AI 回复）
+      const postData = JSON.stringify({
+        from_id: 'mobile_relay',
+        content: content,
+        channel: 'API',
+      })
+
+      const msgReq = http.request({
+        hostname: '127.0.0.1',
+        port: localPort,
+        path: '/message',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+      }, (msgResp) => {
+        msgResp.resume()
+        msgResp.on('end', () => {
+          // 消息已入队，等 SSE 推送回复
+        })
+      })
+
+      msgReq.on('error', () => {
+        if (!resolved) finish('（发送消息失败）')
+      })
+      msgReq.write(postData)
+      msgReq.end()
+
+    } catch (err) {
+      if (!resolved) finish('（处理异常: ' + (err?.message || '未知错误') + '）')
+    }
+  })
+}
+
 async function pollAndProcess() {
-  const token = findToken() || getCachedToken()
+  const token = findToken()
   if (!token) {
     if (!tokenWarned) {
-      console.log('[relay] 未找到云端认证 token，中继轮询暂不启动（请在桌面端登录账号）')
+      console.log('[relay] 未找到云端认证 token，中继轮询暂不启动')
       tokenWarned = true
     }
     return
   }
-  if (!localPort) {
-    console.warn('[relay] 本地端口未设置')
-    return
-  }
-  if (tokenWarned) {
-    console.log('[relay] 找到 token，中继轮询已激活')
-    tokenWarned = false
-  }
+  if (!localPort) return
+  if (tokenWarned) { console.log('[relay] 找到 token，轮询激活'); tokenWarned = false }
 
   try {
-    // 1. 从管理后台拉取待处理消息
+    // 1. 拉取待处理消息
     const pollResp = await fetch(`${ADMIN_API}/api/relay/poll`, {
       headers: { Authorization: `Bearer ${token}` },
       signal: AbortSignal.timeout(5000),
@@ -99,52 +181,46 @@ async function pollAndProcess() {
     if (!pollResp.ok) return
     const data = await pollResp.json()
     const messages = data.messages || []
+    if (messages.length === 0) return
 
-    // 2. 逐条处理：转发给本地后端的 /message API
+    console.log(`[relay] 收到 ${messages.length} 条消息`)
+
+    // 2. 逐条处理（串行，避免并发 AI 调用冲突）
     for (const msg of messages) {
+      if (processing.has(msg.id)) continue
+      processing.add(msg.id)
+      console.log(`[relay] 处理消息 ${msg.id}: ${msg.content?.slice(0, 50)}...`)
+
       try {
-        const localResp = await fetch(`http://127.0.0.1:${localPort}/message`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            from_id: 'mobile_relay',
-            content: msg.content,
-            channel: 'API',
-          }),
-          signal: AbortSignal.timeout(120000),  // AI 回复可能需要时间
-        })
+        // 发消息 + SSE 等待回复
+        const reply = await sendAndWaitForReply(msg.content)
+        console.log(`[relay] 消息 ${msg.id} 回复: ${reply?.slice(0, 50)}...`)
 
-        // 3. 获取 AI 回复
-        let reply = '（已处理）'
-        if (localResp.ok) {
-          const result = await localResp.json()
-          reply = result.reply || result.content || '（已收到）'
-        }
-
-        // 4. 把回复发回管理后台
+        // 3. 回复发回管理后台
         await fetch(`${ADMIN_API}/api/relay/reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
           body: JSON.stringify({ id: msg.id, reply }),
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(10000),
         })
 
-        console.log(`[relay] 消息 ${msg.id} 已处理并回复`)
+        console.log(`[relay] 消息 ${msg.id} 已回复并同步`)
       } catch (err) {
         console.warn(`[relay] 消息 ${msg.id} 处理失败:`, err?.message)
-        // 标记为错误回复，避免卡住
+        // 发送错误回复，避免手机端永远等
         try {
           await fetch(`${ADMIN_API}/api/relay/reply`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
             body: JSON.stringify({ id: msg.id, reply: `（处理失败: ${err?.message || '未知错误'}）` }),
-            signal: AbortSignal.timeout(3000),
+            signal: AbortSignal.timeout(5000),
           })
         } catch {}
+      } finally {
+        processing.delete(msg.id)
       }
     }
   } catch (err) {
-    // 轮询失败（网络/认证问题），静默重试
     if (!err?.message?.includes('abort')) {
       console.warn('[relay] 轮询失败:', err?.message)
     }
