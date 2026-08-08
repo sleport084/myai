@@ -296,10 +296,36 @@ function enterApp(user, desktop) {
   document.getElementById('tokenPill').textContent = formatTokens(remaining)
   document.getElementById('psQuota').textContent = formatTokens(remaining)
   document.getElementById('psUsed').textContent = formatTokens(user.token_used)
+  // 加载历史对话（刷新不丢失）
+  loadHistory()
   // 检查桌面端在线状态
   checkDesktop()
-  // 启动轮询（每 5 秒检查桌面端在线 + 拉取回复）
+  // 启动轮询
   startPolling()
+}
+
+// 加载历史对话
+async function loadHistory() {
+  try {
+    const resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
+    const data = await resp.json()
+    const msgs = data.messages || []
+    // 恢复 lastReplyId
+    lastReplyId = msgs.length > 0 ? msgs[0].id : 0
+    // 渲染到对话区
+    const area = document.getElementById('chatArea')
+    area.innerHTML = '' // 清空欢迎语
+    const sorted = msgs.slice().reverse() // 按时间正序
+    for (const m of sorted) {
+      if (m.content) addBubble(m.content, 'user')
+      if (m.reply && m.status === 'replied') addBubble(m.reply, 'ai')
+    }
+    if (sorted.length === 0) {
+      area.innerHTML = '<div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息通过云端中继转发，不需要局域网，不需要填写 IP。</div>'
+    }
+    // 也渲染记忆页
+    renderRelayMsgs(msgs)
+  } catch {}
 }
 
 function updateDesktopUI(online) {

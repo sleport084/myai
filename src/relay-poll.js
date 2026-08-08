@@ -3,18 +3,18 @@
 // 通过本地 SSE 事件流捕获 AI 回复，再发回管理后台。
 import fs from 'fs'
 import path from 'path'
+import http from 'http'
 import { paths } from './paths.js'
 
 const ADMIN_API = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
 const POLL_INTERVAL_MS = 3000
-const REPLY_TIMEOUT_MS = 120000  // AI 回复最长等待 2 分钟
-const SSE_RECONNECT_DELAY = 2000
+const REPLY_TIMEOUT_MS = 180000  // 3 分钟超时
 
 let polling = false
 let localPort = 0
 let timer = null
 let tokenWarned = false
-let processing = new Set()  // 正在处理中的消息 ID
+const processing = new Set()
 
 // 多路径 token 查找
 function findToken() {
@@ -22,13 +22,10 @@ function findToken() {
     path.join(paths.userDir, '.cloud-auth-token'),
     path.join(process.env.BAILONGMA_USER_DIR || paths.userDir, '.cloud-auth-token'),
   ]
-  // Windows: %APPDATA%\myai 或 %APPDATA%\MyAI（大小写都查）
   if (process.env.APPDATA) {
     candidates.push(path.join(process.env.APPDATA, 'myai', '.cloud-auth-token'))
     candidates.push(path.join(process.env.APPDATA, 'MyAI', '.cloud-auth-token'))
-    candidates.push(path.join(process.env.APPDATA, 'xiaobailong', '.cloud-auth-token'))
   }
-  // macOS: ~/Library/Application Support/myai 或 MyAI
   if (process.env.HOME) {
     candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'myai', '.cloud-auth-token'))
     candidates.push(path.join(process.env.HOME, 'Library', 'Application Support', 'MyAI', '.cloud-auth-token'))
@@ -59,14 +56,18 @@ export function stopRelayPoller() {
 
 /**
  * 发消息到本地后端 + 通过 SSE 等待 AI 回复
- * 模拟桌面端的完整 Turn 生命周期
+ *
+ * 桌面端 AI 回复通过两种 SSE 事件推送：
+ * - 'response' (finishTurn) — 标准回复完成
+ * - 'message' (deliverFallbackReply / deliverDirectReply) — 本地渠道直投
+ *
+ * 两种都要监听，先收到的就是回复。
  */
-async function sendAndWaitForReply(content) {
-  // 用 SSE 监听回复 + HTTP POST 发消息的组合
-  // SSE 连接先开，确保不漏事件
-  return new Promise(async (resolve) => {
+function sendAndWaitForReply(content) {
+  return new Promise((resolve) => {
     let resolved = false
-    let sse = null
+    let sseReq = null
+
     const timeoutId = setTimeout(() => {
       if (!resolved) {
         resolved = true
@@ -77,7 +78,7 @@ async function sendAndWaitForReply(content) {
 
     function cleanup() {
       clearTimeout(timeoutId)
-      if (sse) { try { sse.close() } catch {} }
+      if (sseReq) { try { sseReq.destroy() } catch {} }
     }
 
     function finish(reply) {
@@ -87,85 +88,87 @@ async function sendAndWaitForReply(content) {
       resolve(reply)
     }
 
-    try {
-      // 1. 连接 SSE 事件流（Node.js 用 HTTP 长连接）
-      const http = await import('http')
+    // SSE 缓冲区 — 事件以 \n\n 分隔
+    let sseBuffer = ''
+    // 记录 turn 开始后的消息，用于过滤旧事件
+    const startTime = Date.now()
 
-      let buffer = ''
-      const req = http.get({
-        hostname: '127.0.0.1',
-        port: localPort,
-        path: '/events',
-        headers: { 'Accept': 'text/event-stream' },
-      }, (resp) => {
-        resp.on('data', (chunk) => {
-          buffer += chunk.toString()
-          const lines = buffer.split('\n')
-          buffer = lines.pop() || ''
+    // 1. 连接 SSE 事件流
+    sseReq = http.get({
+      hostname: '127.0.0.1',
+      port: localPort,
+      path: '/events',
+      headers: { 'Accept': 'text/event-stream' },
+      timeout: REPLY_TIMEOUT_MS + 5000,
+    }, (resp) => {
+      resp.setEncoding('utf-8')
+      resp.on('data', (chunk) => {
+        sseBuffer += chunk
+        // SSE 事件以空行(\n\n)分隔
+        const parts = sseBuffer.split('\n\n')
+        sseBuffer = parts.pop() || '' // 最后一段可能不完整，保留
 
+        for (const part of parts) {
+          const lines = part.split('\n')
           for (const line of lines) {
             if (!line.startsWith('data: ')) continue
+            const jsonStr = line.slice(6)
             try {
-              const event = JSON.parse(line.slice(6))
+              const event = JSON.parse(jsonStr)
+              // 忽略连接前的事件
+              if (event.ts && typeof event.ts === 'number' && event.ts < startTime - 5000) continue
 
-              // 收到 AI 回复
+              // response 事件 = AI 回复完成(finishTurn)
               if (event.type === 'response' && event.content) {
                 finish(event.content)
                 return
               }
 
-              // 工具调用中的进度（不结束，继续等）
-              if (event.type === 'tool_call' || event.type === 'tool_executing') {
-                // AI 在调工具，继续等
-              }
-
-              // 处理被中断
-              if (event.type === 'processing_preempted') {
-                finish('（处理被中断，请重试）')
+              // message 事件 = 本地渠道直投回复
+              // 只接受 from='consciousness' 或 from='jarvis' 的消息作为回复
+              if (event.type === 'message' && event.content &&
+                  (event.from === 'consciousness' || event.from === 'jarvis' || event.to === 'mobile_relay')) {
+                finish(event.content)
                 return
               }
             } catch {}
           }
-        })
-
-        resp.on('error', () => {
-          if (!resolved) finish('（SSE 连接断开）')
-        })
+        }
       })
 
-      req.on('error', () => {
-        if (!resolved) finish('（无法连接本地后端）')
+      resp.on('error', () => {
+        if (!resolved) finish('（SSE 连接断开）')
       })
+    })
 
-      // 2. 发送消息到后端（触发 AI 回复）
+    sseReq.on('error', () => {
+      if (!resolved) finish('（无法连接本地后端）')
+    })
+
+    // 2. 发送消息到后端（触发 AI 回复）
+    // 稍微延迟确保 SSE 连接已建立
+    setTimeout(() => {
       const postData = JSON.stringify({
         from_id: 'mobile_relay',
         content: content,
         channel: 'API',
       })
-
       const msgReq = http.request({
         hostname: '127.0.0.1',
         port: localPort,
         path: '/message',
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) },
+        timeout: 10000,
       }, (msgResp) => {
         msgResp.resume()
-        msgResp.on('end', () => {
-          // 消息已入队，等 SSE 推送回复
-        })
       })
-
       msgReq.on('error', () => {
         if (!resolved) finish('（发送消息失败）')
       })
       msgReq.write(postData)
       msgReq.end()
-
-    } catch (err) {
-      if (!resolved) finish('（处理异常: ' + (err?.message || '未知错误') + '）')
-    }
+    }, 200)
   })
 }
 
@@ -194,18 +197,16 @@ async function pollAndProcess() {
 
     console.log(`[relay] 收到 ${messages.length} 条消息`)
 
-    // 2. 逐条处理（串行，避免并发 AI 调用冲突）
+    // 2. 逐条处理（串行）
     for (const msg of messages) {
       if (processing.has(msg.id)) continue
       processing.add(msg.id)
-      console.log(`[relay] 处理消息 ${msg.id}: ${msg.content?.slice(0, 50)}...`)
+      console.log(`[relay] 处理消息 ${msg.id}: ${(msg.content || '').slice(0, 50)}...`)
 
       try {
-        // 发消息 + SSE 等待回复
         const reply = await sendAndWaitForReply(msg.content)
-        console.log(`[relay] 消息 ${msg.id} 回复: ${reply?.slice(0, 50)}...`)
+        console.log(`[relay] 消息 ${msg.id} 回复: ${(reply || '').slice(0, 80)}...`)
 
-        // 3. 回复发回管理后台
         await fetch(`${ADMIN_API}/api/relay/reply`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -216,7 +217,6 @@ async function pollAndProcess() {
         console.log(`[relay] 消息 ${msg.id} 已回复并同步`)
       } catch (err) {
         console.warn(`[relay] 消息 ${msg.id} 处理失败:`, err?.message)
-        // 发送错误回复，避免手机端永远等
         try {
           await fetch(`${ADMIN_API}/api/relay/reply`, {
             method: 'POST',
