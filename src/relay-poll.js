@@ -4,6 +4,8 @@
 // 这样手机端不需要局域网也不需要公网IP，通过云端中继即可对话。
 import { getCachedToken, getCachedUser } from './cloud-auth.js'
 import { paths } from './paths.js'
+import fs from 'fs'
+import path from 'path'
 
 const ADMIN_API = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
 const POLL_INTERVAL_MS = 3000  // 每 3 秒轮询一次
@@ -11,6 +13,36 @@ const POLL_INTERVAL_MS = 3000  // 每 3 秒轮询一次
 let polling = false
 let localPort = 0
 let timer = null
+let tokenWarned = false
+
+// 多路径 token 查找（兼容 main.cjs 写入路径和 paths.userDir）
+function findToken() {
+  // 路径1: paths.userDir（后端标准路径）
+  const p1 = path.join(paths.userDir, '.cloud-auth-token')
+  if (fs.existsSync(p1)) {
+    try { return fs.readFileSync(p1, 'utf-8').trim() } catch {}
+  }
+  // 路径2: Electron userData 目录（通过环境变量）
+  const userData = process.env.BAILONGMA_USER_DIR || paths.userDir
+  const p2 = path.join(userData, '.cloud-auth-token')
+  if (fs.existsSync(p2)) {
+    try { return fs.readFileSync(p2, 'utf-8').trim() } catch {}
+  }
+  // 路径3: Windows %APPDATA%\MyAI
+  const appData = process.env.APPDATA
+  if (appData) {
+    const p3 = path.join(appData, 'MyAI', '.cloud-auth-token')
+    if (fs.existsSync(p3)) {
+      try { return fs.readFileSync(p3, 'utf-8').trim() } catch {}
+    }
+  }
+  // 路径4: 仓库根目录（开发模式）
+  const p4 = path.resolve('.cloud-auth-token')
+  if (fs.existsSync(p4)) {
+    try { return fs.readFileSync(p4, 'utf-8').trim() } catch {}
+  }
+  return null
+}
 
 /**
  * 启动中继轮询
@@ -20,7 +52,15 @@ export function startRelayPoller(port) {
   localPort = port
   if (polling) return
   polling = true
-  console.log('[relay] 启动中继轮询，间隔', POLL_INTERVAL_MS, 'ms')
+  console.log('[relay] 启动中继轮询，本地端口', port, '，管理后台', ADMIN_API)
+  // 检查 token 是否存在
+  const token = findToken()
+  if (token) {
+    console.log('[relay] 云端认证 token 已找到，轮询激活')
+  } else {
+    console.log('[relay] 云端认证 token 未找到，等待登录后自动激活')
+    console.log('[relay] 查找路径:', path.join(paths.userDir, '.cloud-auth-token'), '|', process.env.BAILONGMA_USER_DIR || '(无 BAILONGMA_USER_DIR)')
+  }
 
   timer = setInterval(pollAndProcess, POLL_INTERVAL_MS)
   // 立即执行一次
@@ -33,8 +73,22 @@ export function stopRelayPoller() {
 }
 
 async function pollAndProcess() {
-  const token = getCachedToken()
-  if (!token || !localPort) return
+  const token = findToken() || getCachedToken()
+  if (!token) {
+    if (!tokenWarned) {
+      console.log('[relay] 未找到云端认证 token，中继轮询暂不启动（请在桌面端登录账号）')
+      tokenWarned = true
+    }
+    return
+  }
+  if (!localPort) {
+    console.warn('[relay] 本地端口未设置')
+    return
+  }
+  if (tokenWarned) {
+    console.log('[relay] 找到 token，中继轮询已激活')
+    tokenWarned = false
+  }
 
   try {
     // 1. 从管理后台拉取待处理消息

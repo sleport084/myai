@@ -1815,10 +1815,6 @@ async function startConsciousnessLoop({ runImmediateTick = true } = {}) {
   // 未配置 TYPHOON_ALERT_URL/REGION 环境变量时内部 no-op，安全。
   startTyphoonAlertMonitor()
 
-  // 云端中继轮询：手机端发来的消息通过管理后台中继，桌面端自动拉取并处理回复。
-  // 无需局域网，手机在外面也能和桌面端 AI 对话。
-  startRelayPoller(apiPort)
-
   // MCP 客户端：启动用户配置的 stdio MCP server + 内置 Chrome DevTools（如可用）。
   // 无配置时 reconcileMcpClients 内部 no-op。工具发现后动态注入 TOOL_SCHEMAS。
   startMcpClients().catch(err => console.warn('[mcp] start failed:', err?.message || err))
@@ -1903,8 +1899,12 @@ async function main() {
   })
   startSocialConnectors({ pushMessage, emitEvent }).catch(err => console.warn('[social] startup failed:', err.message))
 
-  // 恢复重启前未完成的 AI 视频生成任务（继续轮询，避免面板永远卡“生成中”）
+  // 恢复重启前未完成的 AI 视频生成任务（继续轮询，避免面板永远卡”生成中”）
   try { resumePendingVideoJobs() } catch (err) { console.warn('[aivideo] resume failed:', err.message) }
+
+  // 云端中继轮询：在 API 启动后立即开始（不等 LLM 激活），
+  // 这样用户即使没配 LLM Key，手机端也能看到桌面端”在线”。
+  startRelayPoller(apiPort)
 
   // Start TUI
   startTUI('ID:000001')
