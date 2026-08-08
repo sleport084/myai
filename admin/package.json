@@ -1,0 +1,16 @@
+{
+  "name": "myai-admin",
+  "version": "1.0.0",
+  "description": "MyAI 管理后台 — 用户管理/充值/品牌配置",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.8.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3"
+  }
+}

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MyAI 管理后台</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,sans-serif;background:#0a0a14;color:#e0e0e8}
+.login{max-width:360px;margin:80px auto;padding:32px;background:#12121e;border-radius:16px;border:1px solid rgba(255,255,255,0.06)}
+.login h1{font-size:22px;margin-bottom:20px;text-align:center}
+.login input{width:100%;padding:11px 14px;margin-bottom:12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#e0e0e8;font-size:14px;outline:none}
+.login button{width:100%;padding:11px;background:#64ffda;color:#0a0a14;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
+.login .err{color:#f87171;font-size:12px;margin-bottom:8px}
+.dash{display:none}
+.topbar{display:flex;align-items:center;padding:12px 20px;background:#12121e;border-bottom:1px solid rgba(255,255,255,0.06)}
+.topbar .logo{font-weight:700;color:#64ffda;font-size:16px}
+.topbar .nav{display:flex;gap:4px;margin-left:24px}
+.topbar .nav span{padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#7a7a9a;transition:.15s}
+.topbar .nav span.active{color:#64ffda;background:rgba(100,255,218,0.08)}
+.topbar .out{margin-left:auto;padding:6px 14px;background:rgba(248,113,113,0.1);color:#f87171;border-radius:8px;cursor:pointer;font-size:12px;border:none}
+.content{padding:20px;max-width:1100px;margin:0 auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;color:#7a7a9a;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:600}
+td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.tag{padding:2px 8px;border-radius:5px;font-size:11px}
+.tag-active{background:rgba(52,211,153,0.12);color:#34d399}
+.tag-suspended{background:rgba(248,113,113,0.12);color:#f87171}
+.btn{padding:4px 10px;border-radius:6px;border:none;cursor:pointer;font-size:12px;margin-right:4px}
+.btn-g{background:rgba(52,211,153,0.12);color:#34d399}
+.btn-r{background:rgba(248,113,113,0.12);color:#f87171}
+.btn-b{background:rgba(96,165,250,0.12);color:#60a5fa}
+.field{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.field label{width:120px;font-size:13px;color:#7a7a9a}
+.field input{flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px;outline:none}
+.save-bar{margin-top:20px}
+.save-bar button{padding:10px 24px;background:#64ffda;color:#0a0a14;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.stats{display:flex;gap:16px;margin-bottom:20px}
+.stat{flex:1;background:#12121e;border-radius:12px;padding:16px;text-align:center}
+.stat .n{font-size:24px;font-weight:700;color:#64ffda}
+.stat .l{font-size:11px;color:#7a7a9a;margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="login" id="login">
+  <h1>◆ MyAI 管理后台</h1>
+  <div class="err" id="lerr"></div>
+  <input id="lu" placeholder="用户名" value="admin">
+  <input id="lp" type="password" placeholder="密码" value="admin">
+  <button onclick="doLogin()">登录</button>
+</div>
+
+<div class="dash" id="dash">
+  <div class="topbar">
+    <div class="logo">◆ MyAI Admin</div>
+    <div class="nav">
+      <span class="active" onclick="tab('users',this)">用户管理</span>
+      <span onclick="tab('brand',this)">品牌配置</span>
+    </div>
+    <button class="out" onclick="localStorage.removeItem('t');location.reload()">退出</button>
+  </div>
+  <div class="content">
+
+    <!-- 用户管理 -->
+    <div id="tab-users">
+      <div class="stats">
+        <div class="stat"><div class="n" id="s-total">-</div><div class="l">总用户</div></div>
+        <div class="stat"><div class="n" id="s-active">-</div><div class="l">活跃</div></div>
+        <div class="stat"><div class="n" id="s-tokens">-</div><div class="l">已发放Token</div></div>
+      </div>
+      <table>
+        <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>状态</th><th>Token余额</th><th>已用</th><th>注册时间</th><th>操作</th></tr></thead>
+        <tbody id="user-list"></tbody>
+      </table>
+    </div>
+
+    <!-- 品牌配置 -->
+    <div id="tab-brand" style="display:none">
+      <h2 style="font-size:18px;margin-bottom:16px">品牌 & Logo 配置</h2>
+      <div class="field"><label>应用名称(英)</label><input id="b-app_name" placeholder="MyAI"></div>
+      <div class="field"><label>应用名称(中)</label><input id="b-app_name_cn" placeholder="MyAI"></div>
+      <div class="field"><label>App ID</label><input id="b-app_id" placeholder="com.myai.app"></div>
+      <div class="field"><label>Agent 名称</label><input id="b-agent_name" placeholder="MyAI"></div>
+      <div class="field"><label>Logo URL</label><input id="b-logo_url" placeholder="https://example.com/logo.png"></div>
+      <div class="field"><label>主题色</label><input id="b-primary_color" placeholder="#64ffda"></div>
+      <div class="field"><label>标语</label><input id="b-slogan" placeholder="你的个人数字助手"></div>
+      <div class="save-bar"><button onclick="saveBranding()">保存品牌配置</button></div>
+      <p style="font-size:12px;color:#7a7a9a;margin-top:12px">保存后,所有客户端启动时拉取最新品牌配置(名称/Logo/颜色)。</p>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const API = window.location.pathname.startsWith('/admin') ? '/admin' : ''
+let token = localStorage.getItem('t')
+
+if (token) showDash()
+
+async function doLogin() {
+  const u = document.getElementById('lu').value
+  const p = document.getElementById('lp').value
+  const r = await fetch(API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
+  const d = await r.json()
+  if (!r.ok) { document.getElementById('lerr').textContent = d.error; return }
+  token = d.token
+  localStorage.setItem('t', token)
+  showDash()
+}
+
+async function showDash() {
+  document.getElementById('login').style.display = 'none'
+  document.getElementById('dash').style.display = 'block'
+  loadUsers()
+  loadBranding()
+}
+
+function tab(id, el) {
+  document.querySelectorAll('.nav span').forEach(s => s.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('tab-users').style.display = id === 'users' ? '' : 'none'
+  document.getElementById('tab-brand').style.display = id === 'brand' ? '' : 'none'
+}
+
+async function loadUsers() {
+  const r = await fetch(API + '/api/users', { headers: { Authorization: 'Bearer ' + token } })
+  if (r.status === 401) { localStorage.removeItem('t'); location.reload(); return }
+  const d = await r.json()
+  const list = d.users || []
+  document.getElementById('s-total').textContent = list.length
+  document.getElementById('s-active').textContent = list.filter(u => u.status === 'active').length
+  document.getElementById('s-tokens').textContent = list.reduce((s,u) => s + (u.token_quota||0), 0)
+  document.getElementById('user-list').innerHTML = list.map(u => `<tr>
+    <td>${u.id}</td><td>${u.username}</td><td>${u.role}</td>
+    <td><span class="tag tag-${u.status}">${u.status}</span></td>
+    <td>${u.token_quota||0}</td><td>${u.token_used||0}</td>
+    <td>${(u.created_at||'').slice(0,10)}</td>
+    <td>
+      <button class="btn btn-g" onclick="recharge(${u.id})">充值</button>
+      <button class="btn ${u.status==='active'?'btn-r':'btn-g'}" onclick="toggleStatus(${u.id},'${u.status}')">${u.status==='active'?'停用':'开通'}</button>
+    </td>
+  </tr>`).join('')
+}
+
+async function loadBranding() {
+  const r = await fetch(API + '/api/branding')
+  const b = await r.json()
+  for (const [k, v] of Object.entries(b)) {
+    const el = document.getElementById('b-' + k)
+    if (el) el.value = v
+  }
+}
+
+async function saveBranding() {
+  const updates = {}
+  document.querySelectorAll('[id^="b-"]').forEach(el => { updates[el.id.slice(2)] = el.value })
+  const r = await fetch(API + '/api/branding/config', {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body:JSON.stringify(updates)
+  })
+  const d = await r.json()
+  alert(r.ok ? '品牌配置已保存' : '保存失败: ' + (d.error||''))
+}
+
+async function recharge(id) {
+  const amount = prompt('输入充值 Token 数量:')
+  if (!amount) return
+  await fetch(API + `/api/users/${id}/recharge`, {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body:JSON.stringify({ amount: parseInt(amount), note: '后台充值' })
+  })
+  loadUsers()
+}
+
+async function toggleStatus(id, current) {
+  const next = current === 'active' ? 'suspended' : 'active'
+  await fetch(API + `/api/users/${id}/status`, {
+    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
+    body:JSON.stringify({ status: next })
+  })
+  loadUsers()
+}
+</script>
+</body>
+</html>

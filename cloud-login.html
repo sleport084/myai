@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MyAI · 登录</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC',sans-serif;background:#06060c;color:#e0e0e8;display:flex;align-items:center;justify-content:center;min-height:100vh}
+body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;background:radial-gradient(ellipse at center,rgba(124,111,240,0.06),transparent 60%);pointer-events:none}
+.card{width:380px;background:#111120;border:1px solid rgba(255,255,255,0.06);border-radius:20px;padding:36px 32px;position:relative;z-index:1}
+.logo{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,#64ffda,#7c6ff0);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#06060c;font-weight:700;box-shadow:0 0 24px rgba(100,255,218,0.15)}
+.card h1{text-align:center;font-size:20px;font-weight:700;margin-bottom:4px}
+.card .sub{text-align:center;font-size:13px;color:#5a5a78;margin-bottom:24px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;background:#0a0a14;border-radius:10px;padding:3px}
+.tabs span{flex:1;text-align:center;padding:8px;border-radius:8px;cursor:pointer;font-size:13px;color:#5a5a78;transition:.15s}
+.tabs span.active{background:#181830;color:#64ffda}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;color:#7a7a9a;margin-bottom:6px}
+.field input{width:100%;padding:12px 14px;background:#1a1a28;border:1px solid rgba(255,255,255,0.06);border-radius:10px;color:#e0e0e8;font-size:14px;outline:none;transition:.15s}
+.field input:focus{border-color:rgba(100,255,218,0.3)}
+.btn{width:100%;padding:13px;background:linear-gradient(135deg,#64ffda,#4dd0b0);border:none;border-radius:10px;color:#06060c;font-size:15px;font-weight:600;cursor:pointer;transition:.15s;margin-top:6px}
+.btn:active{transform:scale(0.97)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.err{color:#f87171;font-size:12px;margin-top:8px;min-height:16px}
+.info{font-size:11px;color:#5a5a78;margin-top:16px;text-align:center;line-height:1.5}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(6,6,12,0.3);border-top-color:#06060c;border-radius:50%;animation:rot 0.6s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">◆</div>
+  <h1>MyAI</h1>
+  <p class="sub">登录你的账号开始使用</p>
+  <div class="tabs">
+    <span class="active" onclick="switchTab('login',this)">登录</span>
+    <span onclick="switchTab('register',this)">注册</span>
+  </div>
+
+  <!-- 登录 -->
+  <div id="form-login">
+    <div class="field"><label>用户名</label><input id="login-user" placeholder="输入用户名" autocomplete="username"></div>
+    <div class="field"><label>密码</label><input id="login-pass" type="password" placeholder="输入密码" autocomplete="current-password"></div>
+    <div class="err" id="login-err"></div>
+    <button class="btn" id="login-btn" onclick="doLogin()">登录</button>
+  </div>
+
+  <!-- 注册 -->
+  <div id="form-register" class="hidden">
+    <div class="field"><label>用户名</label><input id="reg-user" placeholder="设置用户名" autocomplete="username"></div>
+    <div class="field"><label>密码</label><input id="reg-pass" type="password" placeholder="设置密码" autocomplete="new-password"></div>
+    <div class="field"><label>邮箱（选填）</label><input id="reg-email" placeholder="email@example.com"></div>
+    <div class="err" id="reg-err"></div>
+    <button class="btn" id="reg-btn" onclick="doRegister()">注册</button>
+  </div>
+
+  <p class="info">登录后即可配置 AI API Key 开始使用<br>账号由管理后台统一管理</p>
+</div>
+
+<script>
+const AUTH_API = localStorage.getItem('cloud_auth_url') || 'https://zy.tangdou2027.top/admin'
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tabs span').forEach(s => s.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('form-login').classList.toggle('hidden', tab !== 'login')
+  document.getElementById('form-register').classList.toggle('hidden', tab !== 'register')
+}
+
+async function doLogin() {
+  const u = document.getElementById('login-user').value.trim()
+  const p = document.getElementById('login-pass').value
+  const errEl = document.getElementById('login-err')
+  const btn = document.getElementById('login-btn')
+  if (!u || !p) { errEl.textContent = '请输入用户名和密码'; return }
+  errEl.textContent = ''
+  btn.disabled = true
+  btn.innerHTML = '<span class="spin"></span>'
+  try {
+    const resp = await fetch(AUTH_API + '/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p })
+    })
+    const data = await resp.json()
+    if (!resp.ok) { errEl.textContent = data.error || '登录失败'; btn.disabled = false; btn.textContent = '登录'; return }
+    // 登录成功，通知 Electron 主进程
+    if (window.electronAPI && window.electronAPI.cloudAuthSuccess) {
+      window.electronAPI.cloudAuthSuccess(JSON.stringify(data))
+    } else {
+      // 非 Electron 环境（浏览器测试），存 localStorage
+      localStorage.setItem('cloud_token', data.token)
+      localStorage.setItem('cloud_user', JSON.stringify(data.user))
+      errEl.textContent = '✓ 登录成功！'
+      errEl.style.color = '#34d399'
+    }
+  } catch (e) {
+    errEl.textContent = '无法连接服务器: ' + e.message
+    btn.disabled = false
+    btn.textContent = '登录'
+  }
+}
+
+async function doRegister() {
+  const u = document.getElementById('reg-user').value.trim()
+  const p = document.getElementById('reg-pass').value
+  const e = document.getElementById('reg-email').value.trim()
+  const errEl = document.getElementById('reg-err')
+  const btn = document.getElementById('reg-btn')
+  if (!u || !p) { errEl.textContent = '请输入用户名和密码'; return }
+  errEl.textContent = ''
+  btn.disabled = true
+  btn.innerHTML = '<span class="spin"></span>'
+  try {
+    const resp = await fetch(AUTH_API + '/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: u, password: p, email: e })
+    })
+    const data = await resp.json()
+    if (!resp.ok) { errEl.textContent = data.error || '注册失败'; btn.disabled = false; btn.textContent = '注册'; return }
+    if (window.electronAPI && window.electronAPI.cloudAuthSuccess) {
+      window.electronAPI.cloudAuthSuccess(JSON.stringify(data))
+    } else {
+      localStorage.setItem('cloud_token', data.token)
+      errEl.textContent = '✓ 注册成功！'
+      errEl.style.color = '#34d399'
+    }
+  } catch (err) {
+    errEl.textContent = '无法连接服务器: ' + err.message
+    btn.disabled = false
+    btn.textContent = '注册'
+  }
+}
+
+// 回车提交
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin() })
+document.getElementById('reg-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doRegister() })
+</script>
+</body>
+</html>

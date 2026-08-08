@@ -1,0 +1,166 @@
+{
+  "name": "myai",
+  "productName": "MyAI",
+  "version": "0.0.1",
+  "description": "MyAI — 桌面 AI Agent，持续运行的个人数字助手",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "author": {
+    "name": "D.KING"
+  },
+  "scripts": {
+    "start": "electron .",
+    "start:lan": "powershell -ExecutionPolicy Bypass -File scripts/start-lan.ps1 app",
+    "start:backend": "node --env-file=.env src/index.js",
+    "start:backend:lan": "powershell -ExecutionPolicy Bypass -File scripts/start-lan.ps1 backend",
+    "dev": "node --env-file=.env --watch src/index.js",
+    "build": "node scripts/prebuild-clean.mjs && node ./node_modules/@electron/rebuild/lib/cli.js -f -w better-sqlite3 -v 33.4.11 && node ./node_modules/electron-builder/cli.js",
+    "build:win": "node scripts/prebuild-clean.mjs && node ./node_modules/@electron/rebuild/lib/cli.js -f -w better-sqlite3 -v 33.4.11 && node ./node_modules/electron-builder/cli.js --win",
+    "build:mac": "node scripts/build-mac.mjs",
+    "build:mac:x64": "node scripts/build-mac.mjs x64",
+    "build:mac:arm64": "node scripts/build-mac.mjs arm64",
+    "publish": "node scripts/prebuild-clean.mjs && node ./node_modules/@electron/rebuild/lib/cli.js -f -w better-sqlite3 -v 33.4.11 && node ./node_modules/electron-builder/cli.js --publish always",
+    "postinstall": "node ./node_modules/electron-builder/cli.js install-app-deps",
+    "test:rule-context": "electron ./src/test-rule-context.js",
+    "test:complex-task": "electron ./src/test-complex-task.js",
+    "test:relevance": "electron ./src/test-relevance-selection.js",
+    "test:section-gate": "node ./src/test-section-gate.js",
+    "test:agent-skills": "node ./src/test-agent-skills.js",
+    "test:tool-factory": "node ./src/test-tool-factory.js",
+    "test:api-message-utf8": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:ELECTRON_RUN_AS_NODE='1'; .\\node_modules\\.bin\\electron.cmd .\\src\\test-api-message-utf8.js\"",
+    "test:strict-evaluation": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"$env:ELECTRON_RUN_AS_NODE='1'; .\\node_modules\\.bin\\electron.cmd .\\src\\test-strict-evaluation.js\"",
+    "test:config-upgrade": "node ./src/test-config-upgrade.js",
+    "test:voice-continuous": "node ./src/test-voice-continuous.js",
+    "repair:memories:dry": "electron ./scripts/repair-memory-quality.js",
+    "repair:memories": "electron ./scripts/repair-memory-quality.js --apply",
+    "probe:config-upgrade": "node ./scripts/probe-config-upgrade.mjs",
+    "smoke:tools": "node scripts/smoke-tools.mjs",
+    "smoke:tool-factory-web": "node scripts/smoke-tool-factory-web-e2e.mjs",
+    "smoke:brain-ui": "node scripts/smoke-brain-ui.mjs",
+    "smoke:social": "node scripts/smoke-social.mjs"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^3.0.0",
+    "@larksuiteoapi/node-sdk": "^1.68.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@playwright/mcp": "0.0.78",
+    "better-sqlite3": "^12.8.0",
+    "chrome-devtools-mcp": "1.6.0",
+    "d3": "^7.9.0",
+    "electron-updater": "^6.3.9",
+    "node-forge": "^1.4.0",
+    "openai": "^6.34.0",
+    "sherpa-onnx-node": "^1.13.3",
+    "undici": "^6.25.0",
+    "wechat-ilink-client": "^0.1.0",
+    "ws": "^8.20.1"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.0.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "playwright": "^1.59.1",
+    "sharp": "^0.35.1"
+  },
+  "build": {
+    "appId": "com.myai.app",
+    "productName": "MyAI",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "npmRebuild": false,
+    "asar": true,
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**",
+      "**/node_modules/onnxruntime-node/**",
+      "**/node_modules/@huggingface/transformers/**",
+      "**/node_modules/sherpa-onnx-darwin-*/**",
+      "**/node_modules/sherpa-onnx-node/**",
+      "src/voice/**"
+    ],
+    "files": [
+      "electron/**/*",
+      "src/**/*",
+      "skills/**/*",
+      "scripts/seed-memories.js",
+      "index.html",
+      "dashboard.html",
+      "brain.html",
+      "brain-ui.html",
+      "website.html",
+      "systemPrompt.html",
+      "activation.html",
+      "focus-banner.html",
+      "turn-trace.html",
+      "build/icon.ico",
+      "build/icon.png",
+      "build/icon-mac-cartoon.png",
+      "build/native-speech-recognizer",
+      "sandbox/**/*",
+      "music/**/*",
+      "package.json",
+      "!**/*.map",
+      "!src/test-*",
+      "!src/**/test-*",
+      "!scripts/smoke-*.mjs",
+      "!src/**/__pycache__/**",
+      "!src/**/*.pyc",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,readme.md,*.d.ts}",
+      "!**/node_modules/.cache",
+      "!**/.vscode",
+      "!data/**/*"
+    ],
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "installerHeaderIcon": "build/installerHeaderIcon.ico",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/uninstallerSidebar.bmp",
+      "createDesktopShortcut": false,
+      "createStartMenuShortcut": false,
+      "shortcutName": "MyAI"
+    },
+    "mac": {
+      "icon": "build/icon.png",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "category": "public.app-category.productivity",
+      "artifactName": "${productName}-${version}-mac-${arch}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "xiaoyuanda666-ship-it",
+        "repo": "BaiLongma",
+        "releaseType": "release"
+      }
+    ]
+  },
+  "optionalDependencies": {
+    "sherpa-onnx-darwin-x64": "^1.13.3",
+    "sherpa-onnx-darwin-arm64": "^1.13.3",
+    "sherpa-onnx-win-x64": "^1.13.3"
+  }
+}

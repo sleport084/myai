@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyAI 激活</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 18% 18%, rgba(107, 174, 255, 0.12), transparent 32%),
+        radial-gradient(circle at 82% 78%, rgba(50, 112, 255, 0.10), transparent 34%),
+        linear-gradient(160deg, #081019 0%, #0b1420 58%, #060b12 100%);
+      color: #e7edf7;
+      font-size: 16px;
+      line-height: 1.6;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      box-sizing: border-box;
+    }
+    main {
+      width: 480px;
+      max-width: 100%;
+      padding: 28px 28px 24px;
+      border-radius: 18px;
+      border: 1px solid rgba(150, 185, 255, 0.18);
+      background: rgba(10, 17, 27, 0.8);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(20px);
+    }
+    h1 {
+      margin: 0 0 6px;
+      font-size: 22px;
+      line-height: 1.25;
+      font-weight: 600;
+      color: #f5f8fd;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      margin: 0 0 22px;
+      font-size: 13px;
+      color: #8396ae;
+    }
+    .row {
+      display: flex;
+      align-items: stretch;
+      margin-bottom: 10px;
+      border: 1px solid rgba(132, 161, 204, 0.22);
+      border-radius: 12px;
+      background: rgba(16, 25, 38, 0.94);
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .row:focus-within {
+      border-color: rgba(117, 168, 255, 0.72);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.14);
+    }
+    .row > label {
+      flex: 0 0 78px;
+      margin: 0;
+      padding: 0 8px 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      font-size: 12px;
+      color: #7a90a8;
+      text-align: left;
+      letter-spacing: 0;
+      line-height: 1.3;
+      background: rgba(10, 17, 27, 0.4);
+      border-right: 1px solid rgba(132, 161, 204, 0.1);
+      border-radius: 11px 0 0 11px;
+    }
+    .row > .input-wrap,
+    .row > input,
+    .row > select {
+      flex: 1;
+      min-width: 0;
+    }
+    .row-hint {
+      margin: 4px 0 14px 15px;
+      font-size: 12px;
+      color: #7a90a8;
+      line-height: 1.5;
+    }
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 14px;
+      font-size: 11px;
+      color: #6a82a0;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+    .section-divider::before,
+    .section-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(132, 161, 204, 0.1);
+    }
+    .input-wrap {
+      position: relative;
+    }
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      color: #edf4ff;
+      padding: 11px 14px;
+      font-size: 14px;
+      outline: none;
+    }
+    input:focus {
+      outline: none;
+    }
+    input.has-detect {
+      padding-right: 100px;
+    }
+    .detect-badge {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: #7dd8f5;
+      background: rgba(100, 200, 245, 0.12);
+      border: 1px solid rgba(100, 200, 245, 0.25);
+      white-space: nowrap;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .detect-badge.visible {
+      opacity: 1;
+    }
+    button.primary {
+      width: 100%;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #4f8cff 0%, #3572ff 100%);
+      color: #ffffff;
+      padding: 12px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease, filter 0.15s ease;
+    }
+    button.primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+    button.primary:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+      filter: none;
+    }
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      font-size: 14px;
+      color: #9db0c8;
+    }
+    .status.err { color: #ff8f8f; }
+    .status.ok  { color: #74d89f; }
+    .hint {
+      margin-top: 18px;
+      color: #8396ae;
+      font-size: 13px;
+    }
+    .hint code {
+      color: #9fcbff;
+    }
+    .divider {
+      margin: 20px 0 0;
+      border: none;
+      border-top: 1px solid rgba(132, 161, 204, 0.12);
+    }
+
+    /* ── Optional sections (STT / TTS) ── */
+    .opt-section {
+      margin-top: 14px;
+    }
+    .opt-section-label {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #8396ae;
+      font-weight: 500;
+      letter-spacing: 0;
+    }
+    .opt-section-label .opt-label-hint {
+      color: #6a7689;
+      font-weight: 400;
+    }
+    .emb-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      background: none;
+      border: none;
+      padding: 0 2px;
+      margin: 0;
+      cursor: pointer;
+      text-align: left;
+    }
+    .emb-toggle .opt-section-label {
+      margin: 0;
+    }
+    .emb-toggle-icon {
+      font-size: 14px;
+      font-weight: 500;
+      color: #6a7689;
+      transition: transform 0.2s, color 0.15s;
+    }
+    .emb-toggle:hover .emb-toggle-icon {
+      color: #9da9bd;
+    }
+    .emb-toggle.open .emb-toggle-icon {
+      transform: rotate(45deg);
+      color: #b1c1d7;
+    }
+    .opt-body {
+      overflow: hidden;
+    }
+    .opt-body .row:last-child {
+      margin-bottom: 0;
+    }
+    .opt-row-group {
+      margin-bottom: 10px;
+    }
+    .opt-row-group .row {
+      margin-bottom: 8px;
+    }
+    .opt-row-group .row:last-child {
+      margin-bottom: 0;
+    }
+
+    /* ── Embedding card styles ── */
+    select.emb-select {
+      width: 100%;
+      box-sizing: border-box;
+      border: none;
+      background: transparent;
+      color: #edf4ff;
+      padding: 11px 14px;
+      font-size: 14px;
+      outline: none;
+      appearance: none;
+      cursor: pointer;
+    }
+    select.emb-select:focus {
+      outline: none;
+    }
+    .emb-status-line {
+      font-size: 12px;
+      color: #8396ae;
+      margin-bottom: 10px;
+    }
+    .emb-status-line .yes { color: #74d89f; }
+    .emb-status-line .no { color: #ff8f8f; }
+    .emb-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .emb-btn {
+      border: 1px solid rgba(132, 161, 204, 0.24);
+      border-radius: 10px;
+      background: rgba(16, 25, 38, 0.94);
+      color: #d8e4f5;
+      padding: 10px 12px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .emb-btn:hover:not(:disabled) {
+      background: rgba(100, 150, 220, 0.12);
+      border-color: rgba(117, 168, 255, 0.4);
+    }
+    .emb-btn.primary {
+      background: linear-gradient(135deg, #4f8cff 0%, #3572ff 100%);
+      color: #ffffff;
+      border-color: transparent;
+    }
+    .emb-btn.primary:hover:not(:disabled) {
+      filter: brightness(1.05);
+    }
+    .emb-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .emb-result {
+      margin-top: 10px;
+      font-size: 13px;
+      min-height: 18px;
+      color: #9db0c8;
+    }
+    .emb-result.ok { color: #74d89f; }
+    .emb-result.err { color: #ff8f8f; }
+
+    /* ── Custom endpoint section ── */
+    #settings-toggle {
+      display: block;
+      margin-top: 8px;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 13px;
+      color: #6a82a0;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: rgba(106, 130, 160, 0.4);
+      transition: color 0.15s;
+      width: auto;
+    }
+    #settings-toggle:hover { color: #9db0c8; }
+    #settings-toggle.active { color: #74a8ff; }
+    .custom-section { margin-top: 20px; }
+    .custom-section-label {
+      font-size: 12px;
+      color: #7a90a8;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .custom-hint {
+      margin: 0 0 16px;
+      font-size: 13px;
+      color: #7a90a8;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>激活 MyAI</h1>
+    <p class="subtitle">输入 API Key，MyAI 会自动识别官方模型厂商。</p>
+
+    <!-- LLM Key -->
+    <div class="row">
+      <label for="apiKey">LLM Key</label>
+      <input id="apiKey" type="password" autocomplete="off" spellcheck="false" placeholder="粘贴 API Key" />
+    </div>
+    <div class="row-hint">支持 DeepSeek、MiniMax、OpenAI、通义千问、Moonshot、智谱、小米 MiMo 等官方端点</div>
+
+    <!-- AI 名字 -->
+    <div class="row">
+      <label for="agentName">AI 名字</label>
+      <input id="agentName" type="text" autocomplete="off" spellcheck="false" maxlength="32" placeholder="MyAI（默认）、贾维斯、Friday、小白" />
+    </div>
+
+    <div class="section-divider">可选 可不填</div>
+
+    <!-- STT Optional Section -->
+    <div class="opt-section">
+      <div class="row">
+        <label for="stt-key">语音识别 Key</label>
+        <div class="input-wrap">
+          <input id="stt-key" class="has-detect" type="password" autocomplete="off" spellcheck="false"
+            placeholder="粘贴 Key 自动识别厂商" />
+          <span class="detect-badge" id="stt-detect-badge"></span>
+        </div>
+      </div>
+      <div id="stt-extra"></div>
+    </div>
+
+    <!-- TTS Optional Section -->
+    <div class="opt-section">
+      <div class="row">
+        <label for="tts-key">语音合成 Key</label>
+        <div class="input-wrap">
+          <input id="tts-key" class="has-detect" type="password" autocomplete="off" spellcheck="false"
+            placeholder="粘贴 Key 自动识别厂商" />
+          <span class="detect-badge" id="tts-detect-badge"></span>
+        </div>
+      </div>
+      <div id="tts-extra"></div>
+    </div>
+
+    <!-- Embedding Optional Section -->
+    <div class="opt-section">
+      <button class="emb-toggle" id="emb-toggle" type="button">
+        <span class="opt-section-label">记忆向量召回（Embedding） <span class="opt-label-hint">（可选）</span></span>
+        <span class="emb-toggle-icon">+</span>
+      </button>
+      <div class="opt-body" id="emb-body" style="display:none">
+        <div class="emb-status-line" id="emb-status-line">当前状态：<span class="no" id="emb-configured-text">未配置</span></div>
+        <div class="row">
+          <label for="emb-provider">Provider</label>
+          <select id="emb-provider" class="emb-select">
+            <option value="openai">OpenAI</option>
+            <option value="qwen">通义千问 (Qwen)</option>
+            <option value="zhipu">智谱 (Zhipu)</option>
+            <option value="minimax">MiniMax</option>
+            <option value="custom">自定义 (Custom)</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="emb-model">Model</label>
+          <input id="emb-model" type="text" autocomplete="off" spellcheck="false" placeholder="模型名称" />
+        </div>
+        <div class="row">
+          <label for="emb-apikey">API Key</label>
+          <input id="emb-apikey" type="password" autocomplete="off" spellcheck="false" placeholder="留空表示沿用已保存的 Key" />
+        </div>
+        <div class="row">
+          <label for="emb-baseurl">Base URL</label>
+          <input id="emb-baseurl" type="text" autocomplete="off" spellcheck="false" placeholder="留空使用 provider 默认端点" />
+        </div>
+        <div class="row">
+          <label for="emb-dimensions">Dimensions</label>
+          <input id="emb-dimensions" type="number" min="1" autocomplete="off" spellcheck="false" placeholder="维度，留空使用模型默认" />
+        </div>
+        <div class="emb-actions">
+          <button type="button" class="emb-btn primary" id="emb-save">保存</button>
+          <button type="button" class="emb-btn" id="emb-test">测试连接</button>
+        </div>
+        <div class="emb-result" id="emb-result"></div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px;">
+      <button class="primary" id="activate" disabled>自动识别并进入</button>
+    </div>
+    <div id="status" class="status"></div>
+    <button id="settings-toggle" type="button">或使用自定义端点（本地模型）</button>
+
+    <p class="hint">
+      激活信息会保存到本地 <code>config.json</code>，仅用于连接对应厂商的官方 API。
+    </p>
+
+    <!-- Custom endpoint section -->
+    <div id="custom-section" style="display:none;">
+      <hr class="divider">
+      <div class="custom-section">
+        <div class="custom-section-label">自定义端点</div>
+        <p class="custom-hint">Ollama、LM Studio 或其他兼容 OpenAI API 的本地/私有端点，API Key 可留空。</p>
+        <div class="row">
+          <label for="customBaseUrl">Base URL</label>
+          <input id="customBaseUrl" type="text" placeholder="如 http://localhost:11434/v1" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="row">
+          <label for="customModel">模型</label>
+          <input id="customModel" type="text" placeholder="如 llama3.2, qwen2.5, mistral" autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="row">
+          <label for="customApiKey">API Key</label>
+          <input id="customApiKey" type="password" placeholder="本地模型可留空" autocomplete="off" spellcheck="false" />
+        </div>
+        <button class="primary" id="activate-custom" disabled>测试连接并进入</button>
+        <div id="custom-status" class="status"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const ACTIVATION_WARMUP_KEY = 'xiaobailong_activation_warmup_until'
+    const ACTIVATION_WARMUP_MS = 2500
+
+    const apiKeyInput = document.getElementById('apiKey')
+    const agentNameInput = document.getElementById('agentName')
+    const btn = document.getElementById('activate')
+    const statusEl = document.getElementById('status')
+    const AUTO_DETECT_DELAY_MS = 650
+    let autoDetectTimer = null
+    let activationRequestSeq = 0
+    let activationState = { status: 'idle', key: '', agentName: '', token: '', info: null, promise: null }
+
+    const AGENT_NAME_RE = /^[一-龥A-Za-z0-9 _-]+$/
+    function readAgentName() {
+      const v = agentNameInput.value.trim()
+      if (!v) return ''
+      if (v.length > 32) return { error: 'AI 名字不能超过 32 个字符' }
+      if (!AGENT_NAME_RE.test(v)) return { error: 'AI 名字只允许中文、英文字母、数字、空格、下划线、短横线' }
+      return v
+    }
+
+    fetch('/activation-status')
+      .then(r => r.json())
+      .then(data => { if (data.activated) window.location.replace('/brain-ui') })
+      .catch(() => {})
+
+    function setStatus(text, kind) {
+      statusEl.textContent = text
+      statusEl.className = 'status' + (kind ? ' ' + kind : '')
+    }
+
+    function currentActivationDraft() {
+      return {
+        apiKey: apiKeyInput.value.trim(),
+        agentName: agentNameInput.value.trim(),
+      }
+    }
+
+    function isPreparedForCurrentDraft() {
+      const draft = currentActivationDraft()
+      return activationState.status === 'success'
+        && activationState.key === draft.apiKey
+        && activationState.token
+    }
+
+    function syncButtonState() {
+      const draft = currentActivationDraft()
+      if (!draft.apiKey) {
+        btn.disabled = true
+        btn.textContent = '激活并进入'
+        return
+      }
+      if (activationState.status === 'pending'
+          && activationState.key === draft.apiKey) {
+        btn.disabled = true
+        btn.textContent = '正在识别...'
+        return
+      }
+      btn.disabled = false
+      btn.textContent = isPreparedForCurrentDraft()
+        ? '激活并进入'
+        : (activationState.status === 'error' ? '重新识别' : '自动识别')
+    }
+
+    // ── STT auto-detect ──
+    // Returns { id, label, fields: [{id, label, placeholder, type}] } or null
+    function detectSTTProvider(key) {
+      if (!key) return null
+      if (/^sk-[A-Za-z0-9_\-.]{20,}$/.test(key)) return {
+        id: 'aliyun', label: '阿里云 ASR',
+        primaryField: 'aliyunApiKey',
+        defaults: { voiceProvider: 'aliyun' },
+        extra: []
+      }
+      if (/^AKID/i.test(key)) return {
+        id: 'tencent', label: '腾讯云 ASR',
+        primaryField: 'tencentSecretId',
+        defaults: { voiceProvider: 'tencent' },
+        extra: [
+          { id: 'stt-tencent-skey', label: 'SecretKey', placeholder: '腾讯云 SecretKey', configKey: 'tencentSecretKey' },
+          { id: 'stt-tencent-appid', label: 'AppId', placeholder: '腾讯云 AppId（数字）', configKey: 'tencentAppId' },
+        ]
+      }
+      if (/^\d{6,10}$/.test(key)) return {
+        id: 'xunfei', label: '科大讯飞',
+        primaryField: 'xunfeiAppId',
+        defaults: { voiceProvider: 'xunfei' },
+        extra: [
+          { id: 'stt-xunfei-apikey', label: 'ApiKey', placeholder: '讯飞 ApiKey', configKey: 'xunfeiApiKey' },
+          { id: 'stt-xunfei-apisecret', label: 'ApiSecret', placeholder: '讯飞 ApiSecret', configKey: 'xunfeiApiSecret' },
+        ]
+      }
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(key)) return {
+        id: 'volcengine', label: '火山豆包 ASR',
+        primaryField: 'volcAsrApiKey',
+        defaults: { voiceProvider: 'volcengine', volcAsrResourceId: 'volc.bigasr.sauc.duration' },
+        extra: []
+      }
+      return null
+    }
+
+    // ── TTS auto-detect ──
+    function detectTTSProvider(key) {
+      if (!key) return null
+      if (key.startsWith('sk-') && key.length > 30) return {
+        id: 'openai', label: 'OpenAI TTS',
+        primaryField: 'openaiTtsKey',
+        ttsProvider: 'openai',
+        extra: [
+          { id: 'tts-openai-baseurl', label: 'Base URL（可选）', placeholder: '默认 OpenAI 官方端点', configKey: 'openaiTtsBaseURL', type: 'text' },
+        ]
+      }
+      if (key.startsWith('sk_') || (/^[a-f0-9]{32}$/i.test(key) && !key.startsWith('sk'))) return {
+        id: 'elevenlabs', label: 'ElevenLabs',
+        primaryField: 'elevenLabsKey',
+        ttsProvider: 'elevenlabs',
+        extra: []
+      }
+      if (key.startsWith('eyJ') || (key.length >= 64 && /^[A-Za-z0-9\-_]+$/.test(key))) return {
+        id: 'minimax', label: 'MiniMax TTS',
+        primaryField: 'minimaxKey',
+        ttsProvider: 'minimax',
+        extra: []
+      }
+      if (key.length >= 20) return {
+        id: 'doubao', label: '豆包 TTS',
+        primaryField: 'doubaoKey',
+        ttsProvider: 'doubao',
+        defaults: { doubaoResourceId: 'seed-tts-2.0' },
+        extra: []
+      }
+      return null
+    }
+
+    // ── Generic optional section logic ──
+    function setupOptSection({ keyInputId, detectBadgeId, extraContainerId, detectFn }) {
+      const keyInput = document.getElementById(keyInputId)
+      const badge = document.getElementById(detectBadgeId)
+      const extra = document.getElementById(extraContainerId)
+      let detected = null
+
+      keyInput.addEventListener('input', () => {
+        const key = keyInput.value.trim()
+        detected = detectFn(key)
+        if (detected) {
+          badge.textContent = detected.label
+          badge.classList.add('visible')
+        } else {
+          badge.textContent = ''
+          badge.classList.remove('visible')
+        }
+        renderExtra(detected)
+      })
+
+      function renderExtra(info) {
+        extra.innerHTML = ''
+        if (!info || !info.extra || info.extra.length === 0) return
+        const group = document.createElement('div')
+        group.className = info.extra.length > 1 ? 'opt-row-group' : ''
+        for (const f of info.extra) {
+          const div = document.createElement('div')
+          div.className = 'row'
+          div.innerHTML = `<label for="${f.id}">${f.label}</label>
+            <input id="${f.id}" type="${f.type || 'password'}" placeholder="${f.placeholder}"
+              autocomplete="off" spellcheck="false" />`
+          group.appendChild(div)
+        }
+        extra.appendChild(group)
+      }
+
+      function getConfig() {
+        if (!keyInput.value.trim()) return null
+        if (!detected) return null
+        const cfg = { [detected.primaryField]: keyInput.value.trim() }
+        if (detected.extra) {
+          for (const f of detected.extra) {
+            const el = document.getElementById(f.id)
+            if (el && el.value.trim()) cfg[f.configKey] = el.value.trim()
+          }
+        }
+        if (detected.defaults) Object.assign(cfg, detected.defaults)
+        if (detected.ttsProvider) cfg.ttsProvider = detected.ttsProvider
+        return cfg
+      }
+
+      return { getConfig, keyInput }
+    }
+
+    const sttSection = setupOptSection({
+      keyInputId: 'stt-key', detectBadgeId: 'stt-detect-badge',
+      extraContainerId: 'stt-extra',
+      detectFn: detectSTTProvider,
+    })
+
+    const ttsSection = setupOptSection({
+      keyInputId: 'tts-key', detectBadgeId: 'tts-detect-badge',
+      extraContainerId: 'tts-extra',
+      detectFn: detectTTSProvider,
+    })
+
+    // ── Embedding settings card ──
+    const embToggle       = document.getElementById('emb-toggle')
+    const embBody         = document.getElementById('emb-body')
+    const embProviderSel  = document.getElementById('emb-provider')
+    const embModelInput   = document.getElementById('emb-model')
+    const embApiKeyInput  = document.getElementById('emb-apikey')
+    const embBaseURLInput = document.getElementById('emb-baseurl')
+    const embDimsInput    = document.getElementById('emb-dimensions')
+    const embConfiguredEl = document.getElementById('emb-configured-text')
+    const embSaveBtn      = document.getElementById('emb-save')
+    const embTestBtn      = document.getElementById('emb-test')
+    const embResultEl     = document.getElementById('emb-result')
+
+    let embPresets = {}
+    let embCurrentCfg = { provider: '', model: '', baseURL: '', dimensions: null, configured: false }
+
+    embToggle.addEventListener('click', () => {
+      const isOpen = embToggle.classList.contains('open')
+      embToggle.classList.toggle('open', !isOpen)
+      embBody.style.display = isOpen ? 'none' : ''
+    })
+
+    function setEmbResult(text, kind) {
+      embResultEl.textContent = text || ''
+      embResultEl.className = 'emb-result' + (kind ? ' ' + kind : '')
+    }
+
+    function updateEmbConfiguredLabel(configured) {
+      embConfiguredEl.textContent = configured ? '已配置' : '未配置'
+      embConfiguredEl.className = configured ? 'yes' : 'no'
+    }
+
+    function applyPresetDefaults(provider, { force = false } = {}) {
+      const preset = embPresets[provider]
+      if (!preset) return
+      // 仅在字段为空（或 force=true）时填入预设值，避免覆盖用户输入
+      if (force || !embModelInput.value.trim()) {
+        embModelInput.value = preset.defaultModel || ''
+      }
+      if (force || !embBaseURLInput.value.trim()) {
+        embBaseURLInput.value = preset.baseURL || ''
+      }
+      if (force || !embDimsInput.value.trim()) {
+        embDimsInput.value = preset.defaultDims != null ? String(preset.defaultDims) : ''
+      }
+    }
+
+    embProviderSel.addEventListener('change', () => {
+      // 用户主动切换 provider：强制覆盖三个字段为新 provider 的默认值
+      applyPresetDefaults(embProviderSel.value, { force: true })
+    })
+
+    async function loadEmbeddingSettings() {
+      try {
+        const resp = await fetch('/settings/embedding')
+        const data = await resp.json().catch(() => ({}))
+        if (!data || !data.ok) return
+        embPresets = data.presets || {}
+        embCurrentCfg = data.embedding || embCurrentCfg
+        // 选中当前 provider；如果配置里没有就保留 select 默认值（openai）
+        if (embCurrentCfg.provider && embPresets[embCurrentCfg.provider]) {
+          embProviderSel.value = embCurrentCfg.provider
+        }
+        // 填入存储里的当前值（不带 apiKey）
+        embModelInput.value   = embCurrentCfg.model || ''
+        embBaseURLInput.value = embCurrentCfg.baseURL || ''
+        embDimsInput.value    = embCurrentCfg.dimensions != null ? String(embCurrentCfg.dimensions) : ''
+        // 空字段用 preset 补齐
+        applyPresetDefaults(embProviderSel.value, { force: false })
+        updateEmbConfiguredLabel(embCurrentCfg.configured)
+      } catch {
+        // 静默失败：未启动时也不要打扰激活流程
+      }
+    }
+
+    async function saveEmbeddingSettings() {
+      const provider = embProviderSel.value
+      const model    = embModelInput.value.trim()
+      const apiKey   = embApiKeyInput.value.trim()
+      const baseURL  = embBaseURLInput.value.trim()
+      const dimsRaw  = embDimsInput.value.trim()
+
+      // custom 必须用户填 baseURL；其他 provider 留空走预设
+      if (provider === 'custom' && !baseURL) {
+        setEmbResult('✗ 自定义 provider 必须填 Base URL', 'err')
+        return
+      }
+      if (!model) {
+        setEmbResult('✗ Model 必填', 'err')
+        return
+      }
+
+      const payload = { provider, model, baseURL }
+      if (apiKey) payload.apiKey = apiKey  // 留空表示不修改已保存的 key
+      if (dimsRaw) payload.dimensions = Number(dimsRaw)
+
+      embSaveBtn.disabled = true
+      setEmbResult('保存中…', null)
+      try {
+        const resp = await fetch('/settings/embedding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        const data = await resp.json().catch(() => ({}))
+        if (!resp.ok || !data.ok) {
+          setEmbResult('✗ ' + (data.error || '保存失败'), 'err')
+        } else {
+          embCurrentCfg = data.embedding || embCurrentCfg
+          updateEmbConfiguredLabel(embCurrentCfg.configured)
+          embApiKeyInput.value = ''  // 清空 apiKey 输入框（避免误以为明文回显）
+          setEmbResult('✓ 已保存', 'ok')
+        }
+      } catch (err) {
+        setEmbResult('✗ 网络错误：' + err.message, 'err')
+      } finally {
+        embSaveBtn.disabled = false
+      }
+    }
+
+    async function testEmbedding() {
+      embTestBtn.disabled = true
+      setEmbResult('测试中…', null)
+      try {
+        const resp = await fetch('/settings/embedding/test', { method: 'POST' })
+        const data = await resp.json().catch(() => ({}))
+        if (!resp.ok) {
+          setEmbResult('✗ HTTP ' + resp.status + (data.error ? '：' + data.error : ''), 'err')
+        } else if (!data.ok) {
+          setEmbResult('✗ ' + (data.error || '测试失败'), 'err')
+        } else {
+          setEmbResult(`✓ 维度 ${data.dims}，耗时 ${data.elapsedMs}ms`, 'ok')
+        }
+      } catch (err) {
+        setEmbResult('✗ 网络错误：' + err.message, 'err')
+      } finally {
+        embTestBtn.disabled = false
+      }
+    }
+
+    embSaveBtn.addEventListener('click', saveEmbeddingSettings)
+    embTestBtn.addEventListener('click', testEmbedding)
+
+    // 页面加载即拉取当前配置和 presets
+    loadEmbeddingSettings()
+
+    // ── Main activate ──
+    async function saveOptionalVoiceConfigs() {
+      const sttCfg = sttSection.getConfig()
+      const ttsCfg = ttsSection.getConfig()
+      const saves = []
+      if (sttCfg) {
+        saves.push(fetch('/settings/voice', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(sttCfg),
+        }).catch(() => {}))
+      }
+      if (ttsCfg) {
+        saves.push(fetch('/settings/tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(ttsCfg),
+        }).catch(() => {}))
+      }
+      if (saves.length) await Promise.all(saves)
+      return { sttCfg, ttsCfg }
+    }
+
+    async function prepareActivation({ force = false } = {}) {
+      const draft = currentActivationDraft()
+      if (!draft.apiKey) return null
+
+      if (!force && isPreparedForCurrentDraft()) return activationState
+      if (activationState.status === 'pending'
+          && activationState.key === draft.apiKey) {
+        return activationState.promise
+      }
+
+      const seq = ++activationRequestSeq
+      const promise = (async () => {
+        try {
+          const resp = await fetch('/activate/prepare', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: draft.apiKey, provider: 'auto' }),
+          })
+          const data = await resp.json().catch(() => ({}))
+          const latest = currentActivationDraft()
+          if (seq !== activationRequestSeq || latest.apiKey !== draft.apiKey) return null
+          if (!resp.ok || !data.ok) {
+            activationState = { status: 'error', key: draft.apiKey, agentName: '', token: '', info: null, promise: null }
+            setStatus(data.error || '识别失败', 'err')
+            syncButtonState()
+            return null
+          }
+          activationState = {
+            status: 'success',
+            key: draft.apiKey,
+            agentName: '',
+            token: data.token,
+            info: data,
+            promise: null,
+          }
+          setStatus(`识别成功：${data.provider} · ${data.model}。点击“激活并进入”继续。`, 'ok')
+          syncButtonState()
+          return activationState
+        } catch (err) {
+          const latest = currentActivationDraft()
+          if (seq !== activationRequestSeq || latest.apiKey !== draft.apiKey) return null
+          activationState = { status: 'error', key: draft.apiKey, agentName: '', token: '', info: null, promise: null }
+          setStatus('网络错误：' + err.message, 'err')
+          syncButtonState()
+          return null
+        }
+      })()
+
+      activationState = { status: 'pending', key: draft.apiKey, agentName: '', token: '', info: null, promise }
+      setStatus('正在自动识别 API Key 所属厂商...')
+      syncButtonState()
+      return promise
+    }
+
+    function scheduleAutoActivation() {
+      if (autoDetectTimer) clearTimeout(autoDetectTimer)
+      const draft = currentActivationDraft()
+      activationState = { status: 'idle', key: draft.apiKey, agentName: draft.agentName, token: '', info: null, promise: null }
+      syncButtonState()
+      if (!draft.apiKey) {
+        setStatus('')
+        return
+      }
+      if (draft.apiKey.length < 8) return
+      autoDetectTimer = setTimeout(() => prepareActivation(), AUTO_DETECT_DELAY_MS)
+    }
+
+    async function activate() {
+      const draft = currentActivationDraft()
+      if (!draft.apiKey) return
+
+      const prepared = isPreparedForCurrentDraft()
+        ? activationState
+        : await prepareActivation({ force: true })
+      if (!prepared || prepared.status !== 'success') return
+
+      const agentNameResult = readAgentName()
+      if (agentNameResult && typeof agentNameResult === 'object' && agentNameResult.error) {
+        setStatus(agentNameResult.error, 'err')
+        agentNameInput.focus()
+        syncButtonState()
+        return
+      }
+      const agentName = agentNameResult || ''
+
+      btn.disabled = true
+      btn.textContent = '正在进入...'
+      setStatus('正在激活并进入...')
+
+      try {
+        const resp = await fetch('/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            apiKey: draft.apiKey,
+            provider: 'auto',
+            agentName,
+            preparedToken: prepared.token,
+          }),
+        })
+        const data = await resp.json().catch(() => ({}))
+        if (!resp.ok || !data.ok) {
+          activationState = { status: 'error', key: draft.apiKey, agentName, token: '', info: null, promise: null }
+          setStatus(data.error || '激活失败', 'err')
+          syncButtonState()
+          return
+        }
+
+        const { sttCfg, ttsCfg } = await saveOptionalVoiceConfigs()
+        try { sessionStorage.setItem(ACTIVATION_WARMUP_KEY, String(Date.now() + ACTIVATION_WARMUP_MS)) } catch {}
+
+        const voiceNote = [sttCfg && '语音识别', ttsCfg && '语音合成'].filter(Boolean)
+        const suffix = voiceNote.length ? `，已保存 ${voiceNote.join('+')} 配置` : ''
+        setStatus(`激活成功：${data.provider} · ${data.model}${suffix}`, 'ok')
+        setTimeout(() => window.location.replace('/brain-ui'), 350)
+      } catch (err) {
+        setStatus('网络错误：' + err.message, 'err')
+        syncButtonState()
+      }
+    }
+
+    btn.addEventListener('click', activate)
+    apiKeyInput.addEventListener('input', scheduleAutoActivation)
+    apiKeyInput.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !btn.disabled) activate()
+    })
+    syncButtonState()
+    apiKeyInput.focus()
+
+    // ── Custom endpoint ──
+    const settingsToggle = document.getElementById('settings-toggle')
+    const customSection  = document.getElementById('custom-section')
+    const customBaseUrlInput = document.getElementById('customBaseUrl')
+    const customModelInput   = document.getElementById('customModel')
+    const customApiKeyInput  = document.getElementById('customApiKey')
+    const customActivateBtn  = document.getElementById('activate-custom')
+    const customStatusEl     = document.getElementById('custom-status')
+
+    settingsToggle.addEventListener('click', () => {
+      const hidden = customSection.style.display === 'none'
+      customSection.style.display = hidden ? '' : 'none'
+      settingsToggle.classList.toggle('active', hidden)
+      if (hidden) customBaseUrlInput.focus()
+    })
+
+    function syncCustomButtonState() {
+      customActivateBtn.disabled = !customBaseUrlInput.value.trim() || !customModelInput.value.trim()
+    }
+
+    function setCustomStatus(text, kind) {
+      customStatusEl.textContent = text
+      customStatusEl.className = 'status' + (kind ? ' ' + kind : '')
+    }
+
+    async function activateCustom() {
+      const baseURL = customBaseUrlInput.value.trim()
+      const model   = customModelInput.value.trim()
+      const apiKey  = customApiKeyInput.value.trim() || 'none'
+      if (!baseURL || !model) return
+
+      const agentNameResult = readAgentName()
+      if (agentNameResult && typeof agentNameResult === 'object' && agentNameResult.error) {
+        setCustomStatus(agentNameResult.error, 'err')
+        agentNameInput.focus()
+        return
+      }
+      const agentName = agentNameResult || ''
+
+      customActivateBtn.disabled = true
+      setCustomStatus('正在连接测试…')
+
+      try {
+        const resp = await fetch('/activate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider: 'custom', baseURL, model, apiKey, agentName }),
+        })
+        const data = await resp.json().catch(() => ({}))
+        if (!resp.ok || !data.ok) {
+          setCustomStatus(data.error || '连接失败，请检查端点地址和模型名称', 'err')
+          syncCustomButtonState()
+          return
+        }
+        setCustomStatus(`激活成功：${data.model}`, 'ok')
+        setTimeout(() => window.location.replace('/brain-ui'), 700)
+      } catch (err) {
+        setCustomStatus('网络错误：' + err.message, 'err')
+        syncCustomButtonState()
+      }
+    }
+
+    customActivateBtn.addEventListener('click', activateCustom)
+    customBaseUrlInput.addEventListener('input', syncCustomButtonState)
+    customModelInput.addEventListener('input', syncCustomButtonState)
+    customModelInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !customActivateBtn.disabled) activateCustom()
+    })
+  </script>
+</body>
+</html>

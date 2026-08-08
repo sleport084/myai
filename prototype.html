@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>MyAI 布局原型</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+
+body {
+  background: #0a0e14;
+  color: #e8f0f8;
+  font-family: "JetBrains Mono", "Microsoft YaHei", monospace;
+  display: flex;
+}
+
+/* ── 左侧窄导航栏 64px ── */
+.sidebar {
+  width: 64px;
+  height: 100vh;
+  background: rgba(10, 18, 28, 0.95);
+  border-right: 1px solid rgba(0, 212, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.sidebar-brand {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 28%, #fff 0 8%, transparent 9%),
+              radial-gradient(circle at 45% 42%, #00d4ff, #00ffc8 58%, #0a2a3a 100%);
+  box-shadow: 0 0 0 1px rgba(0,212,255,0.2), 0 0 20px rgba(0,212,255,0.3);
+  margin-bottom: 24px;
+}
+
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  width: 100%;
+  padding: 0 6px;
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.nav-item:hover {
+  background: rgba(0,212,255,0.08);
+  border-color: rgba(0,212,255,0.15);
+}
+.nav-item.active {
+  background: rgba(0,212,255,0.12);
+  border-color: rgba(0,212,255,0.3);
+  color: #00d4ff;
+}
+.nav-icon { font-size: 20px; }
+.nav-label { font-size: 8px; letter-spacing: 0.1em; color: #5a7088; }
+.nav-item.active .nav-label { color: #00d4ff; }
+
+.sidebar-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0,212,255,0.1);
+  width: 100%;
+  padding: 12px 6px 0;
+}
+
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px rgba(0,255,136,0.5);
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ── 主聊天区域 ── */
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 0;
+}
+
+/* 顶部标题栏 */
+.topbar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  border-bottom: 1px solid rgba(0,212,255,0.08);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.topbar-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 6px rgba(0,255,136,0.4);
+}
+.topbar-title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: #00d4ff;
+}
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+.topbar-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(0,212,255,0.15);
+  background: transparent;
+  color: #5a7088;
+  font-size: 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.topbar-btn:hover {
+  border-color: #00d4ff;
+  color: #00d4ff;
+}
+
+/* 聊天消息区 */
+.chat-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.msg {
+  max-width: 70%;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.msg-ai {
+  align-self: flex-start;
+  background: rgba(15, 25, 38, 0.8);
+  border: 1px solid rgba(0,212,255,0.1);
+  border-radius: 12px 12px 12px 4px;
+}
+.msg-user {
+  align-self: flex-end;
+  background: linear-gradient(135deg, rgba(0,212,255,0.12), rgba(0,255,200,0.08));
+  border: 1px solid rgba(0,212,255,0.25);
+  border-radius: 12px 12px 4px 12px;
+}
+.msg-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #5a7088;
+  margin-bottom: 4px;
+}
+
+/* ── 输入区域（重点：顶部拖拽线）── */
+.composer {
+  flex-shrink: 0;
+  margin: 0 24px 16px;
+  border: 1px solid rgba(0,212,255,0.15);
+  border-radius: 14px;
+  background: rgba(10, 18, 28, 0.7);
+  backdrop-filter: blur(16px);
+  position: relative;
+  transition: height 0.15s ease;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ★ 顶部拖拽条 — 这是你要的！ */
+.composer-resize-handle {
+  position: absolute;
+  top: -4px;
+  left: 0;
+  right: 0;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.composer-resize-handle::after {
+  content: "";
+  width: 48px;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(0,212,255,0.25);
+  transition: background 0.2s, width 0.2s;
+}
+.composer-resize-handle:hover::after {
+  background: #00d4ff;
+  width: 80px;
+  box-shadow: 0 0 8px rgba(0,212,255,0.4);
+}
+
+.composer-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #e8f0f8;
+  font-size: 14px;
+  font-family: inherit;
+  padding: 14px 16px 8px;
+  resize: none;
+  line-height: 1.6;
+}
+.composer-input::placeholder { color: #5a7088; }
+
+.composer-bottom {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px 10px;
+  gap: 8px;
+}
+.composer-mark {
+  color: #00ffc8;
+  font-size: 14px;
+  animation: blink 1.6s ease-in-out infinite;
+}
+@keyframes blink { 0%,50%,100%{opacity:1} 25%,75%{opacity:0.2} }
+
+.composer-hint {
+  font-size: 10px;
+  color: #5a7088;
+  flex: 1;
+}
+
+.send-btn {
+  padding: 6px 18px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,212,255,0.3);
+  background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,255,200,0.10));
+  color: #00d4ff;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.send-btn:hover {
+  box-shadow: 0 0 15px rgba(0,212,255,0.3);
+  border-color: rgba(0,212,255,0.5);
+}
+
+/* ── 右侧抽屉面板 ── */
+.drawer {
+  width: 300px;
+  height: 100vh;
+  background: rgba(10, 18, 28, 0.95);
+  border-left: 1px solid rgba(0,212,255,0.12);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  transition: margin-right 0.3s ease;
+}
+.drawer.collapsed {
+  margin-right: -300px;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0,212,255,0.08);
+}
+.drawer-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #00d4ff;
+  text-transform: uppercase;
+}
+.drawer-close {
+  background: none;
+  border: none;
+  color: #5a7088;
+  cursor: pointer;
+  font-size: 16px;
+}
+.drawer-close:hover { color: #e8f0f8; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.stat-card {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(0,212,255,0.08);
+  background: rgba(15, 25, 38, 0.5);
+}
+.stat-label {
+  font-size: 9px;
+  color: #5a7088;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e8f0f8;
+  margin-top: 4px;
+}
+.stat-value.live { color: #00ff88; }
+
+.stream-section {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+.stream-title {
+  font-size: 10px;
+  color: #5a7088;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.stream-item {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(0,212,255,0.06);
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: #8fa4b8;
+}
+.stream-item-time {
+  font-size: 9px;
+  color: #5a7088;
+}
+
+/* ── 标注说明 ── */
+.annotation {
+  position: absolute;
+  background: rgba(255, 60, 60, 0.9);
+  color: white;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 100;
+}
+.annotation::before {
+  content: "";
+  position: absolute;
+  border: 4px solid transparent;
+}
+
+/* 拖拽中的高亮 */
+.composer.dragging {
+  border-color: #00d4ff;
+  box-shadow: 0 0 20px rgba(0,212,255,0.2);
+}
+</style>
+</head>
+<body>
+
+<!-- 左侧窄导航栏 -->
+<div class="sidebar">
+  <div class="sidebar-brand"></div>
+  <nav class="sidebar-nav">
+    <div class="nav-item active">
+      <span class="nav-icon">💬</span>
+      <span class="nav-label">聊天</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-icon">🎤</span>
+      <span class="nav-label">语音</span>
+    </div>
+    <div class="nav-item" id="nav-graph">
+      <span class="nav-icon">◉</span>
+      <span class="nav-label">图谱</span>
+    </div>
+  </nav>
+  <div class="sidebar-bottom">
+    <div class="status-dot"></div>
+    <div class="nav-item">
+      <span class="nav-icon">⚙</span>
+      <span class="nav-label">设置</span>
+    </div>
+  </div>
+</div>
+
+<!-- 主聊天区 -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-dot"></div>
+    <div class="topbar-title">MyAI Chat</div>
+    <div class="topbar-right">
+      <button class="topbar-btn" id="toggle-drawer">◉ 监控</button>
+    </div>
+  </div>
+
+  <div class="chat-area">
+    <div class="msg msg-ai">
+      <span class="msg-label">MyAI</span>
+      你好！我是你的 AI 助手。有什么可以帮你的？
+    </div>
+    <div class="msg msg-user">
+      <span class="msg-label">You</span>
+      帮我查一下今天北京的天气
+    </div>
+    <div class="msg msg-ai">
+      <span class="msg-label">MyAI</span>
+      今天北京晴，28°C，空气质量良好。适合出门！
+    </div>
+    <div class="msg msg-user">
+      <span class="msg-label">You</span>
+      收到，以后稍间点。
+    </div>
+  </div>
+
+  <!-- ★ 输入区域：顶部拖拽调整高度 -->
+  <div class="composer" id="composer">
+    <div class="composer-resize-handle" id="resize-handle"></div>
+    <textarea class="composer-input" placeholder="输入消息…（Shift+Enter 换行，拖动顶部横线调整高度）"></textarea>
+    <div class="composer-bottom">
+      <span class="composer-mark">▸</span>
+      <span class="composer-hint">Enter 发送 · Shift+Enter 换行</span>
+      <button class="send-btn">发送</button>
+    </div>
+  </div>
+</div>
+
+<!-- 右侧监控抽屉 -->
+<div class="drawer" id="drawer">
+  <div class="drawer-header">
+    <span class="drawer-title">系统监控</span>
+    <button class="drawer-close" id="drawer-close">×</button>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">状态</div>
+      <div class="stat-value live">● 在线</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">tok/s</div>
+      <div class="stat-value">42.3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">节点</div>
+      <div class="stat-value">128</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">连线</div>
+      <div class="stat-value">256</div>
+    </div>
+  </div>
+
+  <div class="stream-section">
+    <div class="stream-title">Tick 日志</div>
+    <div class="stream-item">
+      <div class="stream-item-time">10:25:56</div>
+      L2 TICK — 沙盒空，无提醒
+    </div>
+    <div class="stream-item">
+      <div class="stream-item-time">10:20:14</div>
+      36氪热点已加入预热
+    </div>
+    <div class="stream-item">
+      <div class="stream-item-time">10:15:33</div>
+      记忆整合完成，合并1条
+    </div>
+    <div class="stream-item">
+      <div class="stream-item-time">10:08:37</div>
+      消息已发送至微信
+    </div>
+  </div>
+</div>
+
+<!-- 标注 -->
+<div class="annotation" style="top: 52px; left: 80px;">← 64px 窄图标栏（固定）</div>
+<div class="annotation" style="top: 52px; right: 310px;">← 300px 监控抽屉（可收起）→</div>
+<div class="annotation" style="bottom: 180px; left: 80px; background: rgba(0,200,255,0.9);">
+  ★ 聊天区占满中间所有空间
+</div>
+<div class="annotation" style="bottom: 140px; right: 100px; background: rgba(0,255,100,0.9); color: #000;">
+  ★ 输入框：拖顶部横线 ↕ 调高度
+</div>
+
+<script>
+// 拖拽调整输入框高度
+const composer = document.getElementById('composer');
+const handle = document.getElementById('resize-handle');
+let isDragging = false;
+let startY = 0;
+let startH = 0;
+
+handle.addEventListener('mousedown', (e) => {
+  isDragging = true;
+  startY = e.clientY;
+  startH = composer.offsetHeight;
+  composer.classList.add('dragging');
+  document.body.style.cursor = 'ns-resize';
+  e.preventDefault();
+});
+
+document.addEventListener('mousemove', (e) => {
+  if (!isDragging) return;
+  const delta = startY - e.clientY; // 向上拖 = 增高
+  const newH = Math.max(80, Math.min(400, startH + delta));
+  composer.style.height = newH + 'px';
+});
+
+document.addEventListener('mouseup', () => {
+  if (isDragging) {
+    isDragging = false;
+    composer.classList.remove('dragging');
+    document.body.style.cursor = '';
+  }
+});
+
+// 切换右抽屉
+document.getElementById('toggle-drawer').addEventListener('click', () => {
+  document.getElementById('drawer').classList.toggle('collapsed');
+});
+document.getElementById('drawer-close').addEventListener('click', () => {
+  document.getElementById('drawer').classList.add('collapsed');
+});
+
+// 图谱按钮切换抽屉
+document.getElementById('nav-graph').addEventListener('click', () => {
+  document.getElementById('drawer').classList.toggle('collapsed');
+});
+</script>
+
+</body>
+</html>
