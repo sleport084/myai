@@ -119,17 +119,23 @@ function sendAndWaitForReply(content) {
               if (event.ts && typeof event.ts === 'number' && event.ts < startTime - 5000) continue
 
               // response 事件 = AI 回复完成(finishTurn)
-              if (event.type === 'response' && event.content) {
-                finish(event.content)
-                return
+              // 格式: {"type":"response","content":"...","ts":"..."}  或  {"type":"response","data":{"content":"..."}}
+              if (event.type === 'response') {
+                const content = event.content || event.data?.content
+                if (content) { finish(content); return }
               }
 
               // message 事件 = 本地渠道直投回复
-              // 只接受 from='consciousness' 或 from='jarvis' 的消息作为回复
-              if (event.type === 'message' && event.content &&
-                  (event.from === 'consciousness' || event.from === 'jarvis' || event.to === 'mobile_relay')) {
-                finish(event.content)
-                return
+              // 格式: {"type":"message","data":{"from":"consciousness","to":"mobile_relay","content":"..."}}
+              if (event.type === 'message') {
+                const d = event.data || event
+                const content = d.content || event.content
+                const from = d.from || event.from
+                const to = d.to || event.to
+                if (content && (from === 'consciousness' || from === 'jarvis' || to === 'mobile_relay')) {
+                  finish(content)
+                  return
+                }
               }
             } catch {}
           }
