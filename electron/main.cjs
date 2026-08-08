@@ -16,7 +16,7 @@ const { autoUpdater } = require('electron-updater')
 // 内置浏览器子系统(用系统 Chrome,不打包 Chromium)
 const { BROWSER_EMBED_PARTITION, createBrowserEmbedHost } = require('./browser-embed-host.cjs')
 const { createBrowserDataStore } = require('./browser-data.cjs')
-const { createMyAIChromeManager } = require('./bailongma-chrome.cjs')
+const { createBaiLongmaChromeManager } = require('./bailongma-chrome.cjs')
 const { bundledBrowserRoot } = require('./playwright-runtime.cjs')
 
 // 暴露 systemPreferences 给 src 层：macos-speech.js 需要它调 askForMediaAccess('microphone')
@@ -166,7 +166,7 @@ global.getBailongmaWindowLayoutSnapshot = function () {
 // ─── 内置 Chrome 浏览器子系统 ───
 // MyAI专用 Chrome:独立 profile 的真 Chrome 进程,通过 CDP 让 agent 自动化浏览。
 // 不打包 Chromium——优先用系统已装 Chrome(BAILONGMA_BROWSER_PATH 可覆盖),找不到则 browser_* 工具报 CHROME_NOT_INSTALLED。
-const bailongmaChrome = createMyAIChromeManager({
+const bailongmaChrome = createBaiLongmaChromeManager({
   userDataDir: USER_DIR,
   bundledBrowserRoot: bundledBrowserRoot({
     isPackaged: app.isPackaged,
