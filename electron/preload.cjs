@@ -17,10 +17,12 @@ contextBridge.exposeInMainWorld('bailongma', {
   },
   // 内嵌浏览器预览卡片:渲染层通过这些方法控制 WebContentsView
   browserEmbed: {
-    update: (payload) => ipcRenderer.invoke('browser-embed:update', payload),
+    update: (payload) => ipcRenderer.invoke('browser-embed:update'),
     hide: () => ipcRenderer.invoke('browser-embed:hide'),
     getState: () => ipcRenderer.invoke('browser-embed:get-state'),
   },
+  // 保存图片:弹出"另存为"对话框,将 base64 图片写入用户选择的路径
+  saveImage: (payload) => ipcRenderer.invoke('save-image', payload),
   // 语音唤醒:命中「小白龙」由主进程经 wake:hit 通知渲染层;
   // 悬浮球窗由本渲染层经下列命令驱动(主进程转发给球窗)。
   wake: {

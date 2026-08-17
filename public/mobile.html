@@ -2,95 +2,174 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
 <title>MyAI</title>
 <style>
-:root{--bg:#06060c;--card:#111120;--card2:#181830;--accent:#64ffda;--accent2:#7c6ff0;--pink:#f472b6;--orange:#fb923c;--green:#34d399;--red:#f87171;--blue:#60a5fa;--text:#e8e8f5;--dim:#5a5a78;--dim2:#7a7a9a;--line:rgba(255,255,255,0.05);--r:14px;--r2:20px}
+:root{
+  --bg:#050510;--bg2:#0a0a18;--card:#0e0e1e;--card2:#161630;--card3:#1c1c3a;
+  --accent:#00e5ff;--accent2:#7c4dff;--accent3:#00ffaa;
+  --pink:#ff4081;--gold:#ffd54f;--orange:#ff6e40;
+  --text:#eef0ff;--text2:#b0b0d0;--dim:#5a5a80;--dim2:#7a7aa0;
+  --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.1);
+  --r:16px;--r2:24px;
+  --grad:linear-gradient(135deg,#00e5ff,#7c4dff);
+  --grad3:linear-gradient(135deg,#00e5ff 0%,#00ffaa 50%,#7c4dff 100%);
+  --glow:0 0 24px rgba(0,229,255,0.15);
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --safe-t:env(safe-area-inset-top,0px);
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,'PingFang SC',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden;position:relative}
-body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;background:radial-gradient(ellipse at center,rgba(124,111,240,0.05),transparent 60%);pointer-events:none;z-index:0}
-.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1}
-.login-logo{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-bottom:16px;display:flex;align-items:center;justify-content:center;font-size:32px;color:#06060c;font-weight:700;box-shadow:0 0 28px rgba(100,255,218,0.15)}
-.login-page h1{font-size:22px;margin-bottom:4px}
-.login-page .sub{font-size:13px;color:var(--dim);margin-bottom:28px}
-.login-tabs{display:flex;gap:4px;background:#0a0a14;border-radius:12px;padding:3px;margin-bottom:20px;width:100%;max-width:300px}
-.login-tabs span{flex:1;text-align:center;padding:9px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--dim);transition:.15s}
-.login-tabs span.active{background:#181830;color:var(--accent)}
+html{font-size:15px}
+body{font-family:-apple-system,'PingFang SC','SF Pro Display',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden;position:relative;line-height:1.5}
+/* 科技背景网格 + 光晕 */
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px);background-size:40px 40px;z-index:0;pointer-events:none}
+body::after{content:'';position:fixed;top:-30%;right:-20%;width:80%;height:60%;background:radial-gradient(circle,rgba(124,77,255,0.06),transparent 60%);z-index:0;pointer-events:none;animation:float 8s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translate(0,0)}50%{transform:translate(-20px,20px)}}
+
+/* ── 登录页 ── */
+.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1;padding-top:calc(60px + var(--safe-t))}
+.login-logo{width:80px;height:80px;border-radius:22px;background:var(--grad3);margin-bottom:18px;display:flex;align-items:center;justify-content:center;font-size:36px;color:#050510;font-weight:800;box-shadow:0 0 40px rgba(0,229,255,0.25),0 8px 32px rgba(124,77,255,0.2);position:relative;animation:logoGlow 3s ease-in-out infinite}
+@keyframes logoGlow{0%,100%{box-shadow:0 0 40px rgba(0,229,255,0.25),0 8px 32px rgba(124,77,255,0.2)}50%{box-shadow:0 0 60px rgba(0,229,255,0.35),0 8px 32px rgba(124,77,255,0.3)}}
+.login-page h1{font-size:24px;margin-bottom:4px;letter-spacing:0.5px}
+.login-page .sub{font-size:13px;color:var(--dim2);margin-bottom:30px;text-align:center}
+.login-tabs{display:flex;gap:4px;background:rgba(10,10,24,0.6);border:1px solid var(--line);border-radius:14px;padding:4px;margin-bottom:22px;width:100%;max-width:300px;backdrop-filter:blur(20px)}
+.login-tabs span{flex:1;text-align:center;padding:10px;border-radius:10px;cursor:pointer;font-size:13px;color:var(--dim2);transition:.2s;font-weight:600}
+.login-tabs span.active{background:var(--card3);color:var(--accent);box-shadow:inset 0 0 12px rgba(0,229,255,0.08)}
 .login-form{width:100%;max-width:300px}
 .login-form .lf{margin-bottom:14px}
-.login-form label{display:block;font-size:12px;color:var(--dim2);margin-bottom:5px}
-.login-form input{width:100%;padding:12px 14px;background:#1a1a28;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:14px;outline:none}
-.login-form input:focus{border-color:rgba(100,255,218,0.25)}
-.login-form button{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#4dd0b0);border:none;border-radius:10px;color:#06060c;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px}
+.login-form label{display:block;font-size:12px;color:var(--dim2);margin-bottom:6px;font-weight:500}
+.login-form input{width:100%;padding:13px 16px;background:rgba(14,14,30,0.6);border:1px solid var(--line2);border-radius:12px;color:var(--text);font-size:15px;outline:none;transition:.2s;backdrop-filter:blur(10px)}
+.login-form input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,229,255,0.1)}
+.login-form input::placeholder{color:var(--dim)}
+.login-form button{width:100%;padding:14px;background:var(--grad);border:none;border-radius:12px;color:#050510;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px;transition:.15s;box-shadow:0 4px 20px rgba(0,229,255,0.2)}
 .login-form button:active{transform:scale(0.97)}
-.login-form .err{color:var(--red);font-size:12px;margin-top:6px;min-height:16px}
-.app{display:none;padding:0 14px 75px;position:relative;z-index:1}
+.login-form .err{color:var(--pink);font-size:12px;margin-top:6px;min-height:16px;text-align:center}
+
+/* ── 主应用 ── */
+.app{display:none;position:relative;z-index:1}
 .app.show{display:block}
-.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:60px;background:rgba(8,8,16,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.bnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:.2s;color:var(--dim);flex:1;position:relative}
-.bnav-item.active{color:var(--accent)}
-.bnav-item.active::before{content:'';position:absolute;top:-1px;width:24px;height:2px;background:var(--accent);border-radius:0 0 3px 3px}
-.bnav-item svg{width:21px;height:21px}
-.bnav-item span{font-size:10px}
-.sbar{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 6px}
-.sbar .sl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
-.sbar .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 6px rgba(251,191,36,0.5);animation:blk 2s infinite}
-.sbar .dot.online{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,0.5)}
-@keyframes blk{50%{opacity:0.3}}
-.sbar .sr{display:flex;gap:8px;font-size:11px;color:var(--dim);align-items:center}
-.sbar .token-pill{padding:2px 8px;background:rgba(100,255,218,0.1);border-radius:8px;color:var(--accent);font-size:10px;font-weight:600}
-.sbar .ph{font-size:18px;font-weight:700;padding:6px 0 2px}
-.chat-area{display:flex;flex-direction:column;gap:7px}
-.bubble{max-width:82%;padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
-.bubble.ai{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px;align-self:flex-start}
-.bubble.user{background:linear-gradient(135deg,rgba(100,255,218,0.1),rgba(124,111,240,0.06));border:1px solid rgba(100,255,218,0.1);border-bottom-right-radius:4px;align-self:flex-end}
-.typing{display:inline-flex;gap:3px;padding:3px 0}
-.typing span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:tp 1.2s infinite}
+
+/* 顶部状态栏 */
+.sbar{position:sticky;top:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:calc(8px + var(--safe-t)) 16px 8px;background:rgba(5,5,16,0.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--line)}
+.sbar .sl{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.sbar .dot{width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 8px rgba(255,213,79,0.6);animation:pulse 2s infinite}
+.sbar .dot.online{background:var(--accent3);box-shadow:0 0 8px rgba(0,255,170,0.6)}
+@keyframes pulse{50%{opacity:0.4}}
+.sbar .sr{display:flex;gap:8px;align-items:center}
+.token-pill{padding:3px 10px;background:linear-gradient(135deg,rgba(0,229,255,0.08),rgba(124,77,255,0.08));border:1px solid rgba(0,229,255,0.12);border-radius:20px;color:var(--accent);font-size:11px;font-weight:600}
+.sbar .ph{font-size:18px;font-weight:800;padding:4px 0 2px;letter-spacing:0.3px}
+
+/* 连接状态横幅 */
+.conn-banner{margin:10px 14px 6px;padding:11px 14px;background:linear-gradient(135deg,rgba(255,110,64,0.06),rgba(255,213,79,0.03));border:1px solid rgba(255,110,64,0.12);border-radius:14px;display:flex;align-items:center;gap:12px;transition:.3s}
+.conn-banner.online{background:linear-gradient(135deg,rgba(0,255,170,0.06),rgba(0,229,255,0.03));border-color:rgba(0,255,170,0.12)}
+.conn-banner .ci{font-size:22px;line-height:1}
+.conn-banner .ct{font-size:13px;flex:1;font-weight:600}
+.conn-banner .ct small{font-size:11px;color:var(--dim2);display:block;margin-top:1px;font-weight:400}
+
+/* 对话区 */
+.chat-area{display:flex;flex-direction:column;gap:8px;padding:10px 14px 180px}
+.bubble{max-width:85%;padding:12px 16px;border-radius:18px;font-size:14.5px;line-height:1.6;word-break:break-word;position:relative;animation:bubbleIn .3s ease}
+@keyframes bubbleIn{from{opacity:0;transform:translateY(8px) scale(0.97)}to{opacity:1;transform:none}}
+.bubble.ai{background:var(--card);border:1px solid var(--line2);border-bottom-left-radius:6px;align-self:flex-start;box-shadow:0 2px 12px rgba(0,0,0,0.15)}
+.bubble.user{background:linear-gradient(135deg,rgba(0,229,255,0.08),rgba(124,77,255,0.06));border:1px solid rgba(0,229,255,0.12);border-bottom-right-radius:6px;align-self:flex-end;color:var(--text)}
+.bubble img{max-width:100%;border-radius:12px;margin:6px 0;display:block;cursor:zoom-in}
+.bubble video{max-width:100%;border-radius:12px;margin:6px 0;display:block}
+.bubble audio{width:100%;margin:6px 0}
+.bubble a{color:var(--accent);word-break:break-all}
+.bubble code{background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:5px;font-size:13px;font-family:'SF Mono',monospace}
+.bubble pre{background:rgba(0,0,0,0.35);padding:12px;border-radius:10px;overflow-x:auto;margin:6px 0;border:1px solid var(--line)}
+.bubble pre code{background:none;padding:0}
+.bubble strong{color:var(--accent);font-weight:700}
+.bubble ul,.bubble ol{padding-left:18px;margin:4px 0}
+.bubble li{margin:2px 0}
+
+.typing{display:inline-flex;gap:4px;padding:4px 0}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:tp 1.4s infinite}
 .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
-@keyframes tp{0%,60%,100%{opacity:0.3;transform:scale(0.8)}30%{opacity:1;transform:scale(1.1)}}
-.qrow{display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none}
+@keyframes tp{0%,60%,100%{opacity:0.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+
+/* 快捷提问 */
+.qrow{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 8px;scrollbar-width:none}
 .qrow::-webkit-scrollbar{display:none}
-.qbtn{flex-shrink:0;padding:7px 13px;background:var(--card);border:1px solid var(--line);border-radius:18px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap}
-.qbtn:active{transform:scale(0.93)}
-.cbar{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:7px 12px;background:rgba(8,8,16,0.88);backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;gap:7px;z-index:99;align-items:center}
-.cbar input{flex:1;padding:9px 16px;background:var(--card);border:1px solid var(--line);border-radius:22px;color:var(--text);font-size:14px;outline:none}
-.cbar input:focus{border-color:rgba(100,255,218,0.2)}
-.cbar .send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#4dd0b0);border:none;color:#06060c;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.page{display:none;animation:fade .3s}.page.active{display:block}
-@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
-.stl{font-size:15px;font-weight:700;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
-.stl .bar{width:3px;height:14px;border-radius:2px;background:var(--accent)}
-.fc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:.12s}
-.fc:active{transform:scale(0.98);background:var(--card2)}
-.fc .fi{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
-.fc .ft{font-size:13px;font-weight:600}
-.fc .fd{font-size:11px;color:var(--dim2)}
-.fc .fa{color:var(--dim);font-size:12px;flex-shrink:0}
-.mc{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:6px}
-.mc .mt{font-size:13px;line-height:1.45;margin-bottom:6px}
+.qbtn{flex-shrink:0;padding:8px 14px;background:rgba(14,14,30,0.6);border:1px solid var(--line2);border-radius:20px;font-size:12.5px;color:var(--text2);cursor:pointer;white-space:nowrap;transition:.15s;backdrop-filter:blur(10px)}
+.qbtn:active{transform:scale(0.93);background:var(--card3)}
+
+/* 输入栏 — 抬高到导航栏上方 */
+.cbar{position:fixed;bottom:calc(56px + var(--safe-b));left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:7px 12px;background:rgba(5,5,16,0.9);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line2);display:flex;gap:7px;z-index:99;align-items:center}
+.cbar input{flex:1;padding:11px 18px;background:var(--card);border:1px solid var(--line2);border-radius:24px;color:var(--text);font-size:15px;outline:none;transition:.2s}
+.cbar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,229,255,0.08)}
+.cbar input:disabled{opacity:0.4}
+.cbar .mic{width:38px;height:38px;border-radius:50%;background:var(--card);border:1px solid var(--line2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.2s}
+.cbar .mic:active{transform:scale(0.9)}
+.cbar .mic.recording{background:var(--pink);border-color:var(--pink);color:#fff;animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(255,64,129,0.4)}50%{box-shadow:0 0 0 8px rgba(255,64,129,0)}}
+.cbar .send{width:38px;height:38px;border-radius:50%;background:var(--grad);border:none;color:#050510;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:.15s;box-shadow:0 2px 12px rgba(0,229,255,0.2)}
+.cbar .send:active{transform:scale(0.9)}
+
+/* 底部导航 */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:calc(56px + var(--safe-b));background:rgba(5,5,16,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-around;z-index:100;padding-top:8px}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;transition:.2s;color:var(--dim);flex:1;position:relative;padding:4px}
+.bnav-item.active{color:var(--accent)}
+.bnav-item.active::before{content:'';position:absolute;top:-9px;width:28px;height:3px;background:var(--grad);border-radius:0 0 4px 4px;box-shadow:0 0 8px rgba(0,229,255,0.3)}
+.bnav-item svg{width:22px;height:22px}
+.bnav-item span{font-size:10px;font-weight:500}
+
+/* 页面切换 */
+.page{display:none;animation:fade .35s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* 功能页 */
+.stl{font-size:14px;font-weight:700;margin:18px 16px 10px;display:flex;align-items:center;gap:8px;letter-spacing:0.3px}
+.stl .bar{width:4px;height:16px;border-radius:2px;background:var(--grad)}
+.fc{background:var(--card);border:1px solid var(--line2);border-radius:var(--r);padding:14px;margin:0 14px 8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.12s}
+.fc:active{transform:scale(0.97);background:var(--card2)}
+.fc .fi{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.fc .ft{font-size:14px;font-weight:600}
+.fc .fd{font-size:11.5px;color:var(--dim2);margin-top:1px}
+.fc .fa{color:var(--dim);font-size:14px;flex-shrink:0}
+.tool-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:0 14px}
+.tool-cell{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 6px;text-align:center;transition:.12s}
+.tool-cell:active{transform:scale(0.93)}
+.tool-cell .ti{font-size:22px}
+.tool-cell .tn{font-size:9px;color:var(--dim2);margin-top:3px}
+
+/* 记忆页 */
+.mc{background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:13px;margin:0 14px 7px}
+.mc .mt{font-size:13px;line-height:1.5;margin-bottom:6px}
 .mc .mm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.mtag{padding:2px 7px;border-radius:5px;font-size:9px}
-.profile-card{background:linear-gradient(135deg,rgba(100,255,218,0.06),rgba(124,111,240,0.04));border:1px solid rgba(100,255,218,0.08);border-radius:var(--r2);padding:20px;margin-bottom:14px;text-align:center}
-.profile-card .pa{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#06060c;font-weight:700}
-.profile-card .pn{font-size:17px;font-weight:700}
-.profile-card .pe{font-size:12px;color:var(--dim2);margin-top:2px}
-.profile-stats{display:flex;gap:12px;justify-content:center;margin-top:14px}
+.mtag{padding:2px 8px;border-radius:6px;font-size:9px;font-weight:600}
+.tag-replied{background:rgba(0,255,170,0.1);color:var(--accent3)}
+.tag-pending{background:rgba(255,213,79,0.1);color:var(--gold)}
+.tag-processing{background:rgba(0,229,255,0.1);color:var(--accent)}
+
+/* 我的页 */
+.profile-card{background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(124,77,255,0.04));border:1px solid rgba(0,229,255,0.1);border-radius:var(--r2);padding:24px;margin:14px;text-align:center;position:relative;overflow:hidden}
+.profile-card::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(0,229,255,0.03),transparent 50%);animation:rotate 20s linear infinite}
+@keyframes rotate{to{transform:rotate(360deg)}}
+.profile-card .pa{width:64px;height:64px;border-radius:50%;background:var(--grad3);margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#050510;font-weight:800;position:relative;z-index:1;box-shadow:0 0 24px rgba(0,229,255,0.2)}
+.profile-card .pn{font-size:18px;font-weight:700;position:relative;z-index:1}
+.profile-card .pe{font-size:12px;color:var(--dim2);margin-top:2px;position:relative;z-index:1}
+.profile-stats{display:flex;gap:14px;justify-content:center;margin-top:16px;position:relative;z-index:1}
 .profile-stat{text-align:center}
-.profile-stat .n{font-size:18px;font-weight:700;color:var(--accent)}
-.profile-stat .l{font-size:10px;color:var(--dim);margin-top:2px}
-.set-item{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.12s}
-.set-item:active{transform:scale(0.98)}
-.set-item .si{font-size:18px;width:24px;text-align:center}
-.set-item .st{font-size:13px;flex:1}
-.set-item .sv{font-size:12px;color:var(--dim)}
-.set-item .sa{font-size:12px;color:var(--dim)}
-.conn-banner{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.1);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.conn-banner.online{background:rgba(52,211,153,0.06);border-color:rgba(52,211,153,0.1)}
-.conn-banner .ci{font-size:20px}
-.conn-banner .ct{font-size:13px;flex:1}
-.conn-banner .ct small{font-size:11px;color:var(--dim2);display:block;margin-top:1px}
+.profile-stat .n{font-size:20px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.profile-stat .l{font-size:10px;color:var(--dim2);margin-top:2px}
+.set-item{background:var(--card);border:1px solid var(--line2);border-radius:13px;padding:14px 16px;margin:0 14px 7px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.12s}
+.set-item:active{transform:scale(0.97)}
+.set-item .si{font-size:20px;width:28px;text-align:center}
+.set-item .st{font-size:14px;flex:1;font-weight:500}
+.set-item .sv{font-size:13px;color:var(--dim2)}
+.set-item .sa{font-size:14px;color:var(--dim)}
+
+/* 图片全屏预览 */
+.img-overlay{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;cursor:zoom-out;animation:fadeIn .2s}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.img-overlay img{max-width:94vw;max-height:90vh;border-radius:8px;box-shadow:0 8px 48px rgba(0,0,0,0.6)}
+.img-overlay .close{position:absolute;top:20px;right:20px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.12);border:none;color:#fff;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.img-overlay .save{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);padding:12px 28px;background:var(--grad);border:none;border-radius:24px;color:#050510;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(0,229,255,0.3)}
 </style>
 </head>
 <body>
@@ -99,7 +178,7 @@ body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;
 <div class="login-page" id="loginPage">
   <div class="login-logo" id="loginLogo">◆</div>
   <h1 id="loginTitle">MyAI</h1>
-  <p class="sub" id="loginSub">登录你的账号开始使用</p>
+  <p class="sub" id="loginSub">你的持续运行的个人数字助手</p>
   <div class="login-tabs">
     <span class="active" onclick="lTab('login',this)">登录</span>
     <span onclick="lTab('register',this)">注册</span>
@@ -127,30 +206,29 @@ body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;
 <!-- 对话页 -->
 <div class="page active" id="p-chat">
   <div class="sbar">
-    <div class="sl"><div class="dot" id="connDot"></div><span id="connText">检查中…</span></div>
+    <div class="sl"><div class="dot" id="connDot"></div><span id="connText">检查中</span></div>
     <div class="sr"><span class="token-pill" id="tokenPill">--</span></div>
   </div>
-
   <div class="conn-banner" id="connBanner">
     <div class="ci" id="connIcon">💻</div>
     <div class="ct" id="connDesc">桌面端未连接<small>请在电脑上启动 MyAI 并登录同账号</small></div>
   </div>
-
   <div class="chat-area" id="chatArea">
-    <div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息会通过云端中继转发给你的电脑，电脑端处理后回复。<br>不需要同一局域网，不需要填写 IP。</div>
+    <div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。消息通过云端中继转发，不需要局域网。</div>
   </div>
-
   <div class="qrow">
     <div class="qbtn" onclick="qa('你能做什么？')">🎯 能做什么</div>
     <div class="qbtn" onclick="qa('搜索记忆')">🧠 搜记忆</div>
     <div class="qbtn" onclick="qa('今天有什么热点？')">🔥 热点</div>
-    <div class="qbtn" onclick="qa('有台风吗？')">🌀 台风</div>
+    <div class="qbtn" onclick="qa('画一只猫')">🎨 画图</div>
   </div>
-
   <div class="cbar">
-    <input id="msgInput" placeholder="输入消息…" onkeydown="if(event.key==='Enter')sendMsg()" disabled>
+    <input id="msgInput" placeholder="等待桌面端上线…" onkeydown="if(event.key==='Enter')sendMsg()" disabled>
+    <button class="mic" onclick="toggleVoice()" id="micBtn" title="语音输入">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
     <button class="send" onclick="sendMsg()" id="sendBtn">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
     </button>
   </div>
 </div>
@@ -159,32 +237,37 @@ body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;
 <div class="page" id="p-feat">
   <div class="sbar"><div class="ph">功能</div></div>
   <div class="stl"><div class="bar"></div>🧠 核心</div>
-  <div class="fc" onclick="goChat()"><div class="fi" style="background:rgba(100,255,218,0.1)">💬</div><div style="flex:1"><div class="ft">AI 对话</div><div class="fd">流式 · 多模型 · 工具循环</div></div><div class="fa">›</div></div>
-  <div class="fc" onclick="pg('mem')"><div class="fi" style="background:rgba(124,111,240,0.1)">🧠</div><div style="flex:1"><div class="ft">长期记忆</div><div class="fd">向量检索 · 专注栈 · 自我进化</div></div><div class="fa">›</div></div>
-  <div class="stl"><div class="bar"></div>🎙️ 语音</div>
-  <div class="fc"><div class="fi" style="background:rgba(96,165,250,0.1)">🎤</div><div style="flex:1"><div class="ft">ASR 语音识别</div><div class="fd">5引擎 · 阿里云·腾讯·讯飞·火山·离线</div></div><div class="fa">›</div></div>
-  <div class="fc"><div class="fi" style="background:rgba(251,191,36,0.1)">🔊</div><div style="flex:1"><div class="ft">TTS 语音合成</div><div class="fd">豆包2.0·MiniMax·OpenAI·ElevenLabs</div></div><div class="fa">›</div></div>
-  <div class="stl"><div class="bar"></div>🌐 自动化</div>
-  <div class="fc"><div class="fi" style="background:rgba(52,211,153,0.1)">🌐</div><div style="flex:1"><div class="ft">浏览器 + MCP</div><div class="fd">内置Chrome · 20个browser工具</div></div><div class="fa">›</div></div>
-  <div class="fc"><div class="fi" style="background:rgba(124,111,240,0.1)">🎨</div><div style="flex:1"><div class="ft">声明式 UI</div><div class="fd">11种卡片 · scene协议</div></div><div class="fa">›</div></div>
-  <div class="stl"><div class="bar"></div>🛠️ 工具（67个）</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">📁</div><div style="font-size:9px;color:var(--dim2)">文件5</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">⚡</div><div style="font-size:9px;color:var(--dim2)">命令4</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🔍</div><div style="font-size:9px;color:var(--dim2)">搜索3</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🧠</div><div style="font-size:9px;color:var(--dim2)">记忆8</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🎨</div><div style="font-size:9px;color:var(--dim2)">媒体7</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">⏰</div><div style="font-size:9px;color:var(--dim2)">提醒6</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🤖</div><div style="font-size:9px;color:var(--dim2)">Agent7</div></div>
-    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🌐</div><div style="font-size:9px;color:var(--dim2)">浏览20</div></div>
+  <div class="fc" onclick="goChat()"><div class="fi" style="background:rgba(0,229,255,0.1)">💬</div><div style="flex:1"><div class="ft">AI 对话</div><div class="fd">流式 · 多模型 · 工具循环</div></div><div class="fa">›</div></div>
+  <div class="fc" onclick="pg('mem')"><div class="fi" style="background:rgba(124,77,255,0.1)">🧠</div><div style="flex:1"><div class="ft">长期记忆</div><div class="fd">向量检索 · 专注栈 · 自我进化</div></div><div class="fa">›</div></div>
+  <div class="stl"><div class="bar"></div>🎨 媒体生成</div>
+  <div class="fc" onclick="qa('画一张赛博朋克城市夜景图')"><div class="fi" style="background:rgba(0,255,170,0.1)">🖼️</div><div style="flex:1"><div class="ft">图片生成</div><div class="fd">多米云 · 高清 4K</div></div><div class="fa">›</div></div>
+  <div class="fc" onclick="qa('帮我生成一首轻音乐')"><div class="fi" style="background:rgba(255,64,129,0.1)">🎵</div><div style="flex:1"><div class="ft">音乐生成</div><div class="fd">多米 · Suno 模型</div></div><div class="fa">›</div></div>
+  <div class="stl"><div class="bar"></div>🛠️ 工具矩阵</div>
+  <div class="tool-grid">
+    <div class="tool-cell" onclick="qa('查看我的文件')"><div class="ti">📁</div><div class="tn">文件</div></div>
+    <div class="tool-cell" onclick="qa('执行 echo hello')"><div class="ti">⚡</div><div class="tn">命令</div></div>
+    <div class="tool-cell" onclick="qa('搜索 AI 最新进展')"><div class="ti">🔍</div><div class="tn">搜索</div></div>
+    <div class="tool-cell" onclick="qa('搜索记忆')"><div class="ti">🧠</div><div class="tn">记忆</div></div>
+    <div class="tool-cell" onclick="qa('画一张图')"><div class="ti">🎨</div><div class="tn">媒体</div></div>
+    <div class="tool-cell" onclick="qa('5分钟后提醒我')"><div class="ti">⏰</div><div class="tn">提醒</div></div>
+    <div class="tool-cell" onclick="qa('打开浏览器')"><div class="ti">🌐</div><div class="tn">浏览</div></div>
+    <div class="tool-cell" onclick="qa('查看天气')"><div class="ti">🌤️</div><div class="tn">天气</div></div>
   </div>
 </div>
 
 <!-- 记忆页 -->
 <div class="page" id="p-mem">
   <div class="sbar"><div class="ph">🧠 记忆</div></div>
-  <div class="stl"><div class="bar"></div>最近对话（通过中继）</div>
-  <div id="relayMsgList" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div class="stl"><div class="bar"></div>最近对话</div>
+  <div id="relayMsgList"></div>
+</div>
+
+<!-- 技能页 -->
+<div class="page" id="p-skill">
+  <div class="sbar"><div class="ph">🎯 技能市场</div></div>
+  <div id="skillList" style="padding:0 14px">
+    <div class="mc" style="text-align:center;color:var(--dim2)">加载中…</div>
+  </div>
 </div>
 
 <!-- 我的页 -->
@@ -208,13 +291,14 @@ body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;
   </div>
   <div class="stl"><div class="bar"></div>账号</div>
   <div class="set-item" onclick="logout()"><div class="si">🚪</div><div class="st">退出登录</div><div class="sa">›</div></div>
-  <div class="set-item" onclick="alert((branding.app_name||'MyAI')+'\\n云端中继对话\\n\\n管理后台: '+ADMIN_API)"><div class="si">ℹ️</div><div class="st">关于 MyAI</div><div class="sa">›</div></div>
+  <div class="set-item" onclick="alert((branding.app_name||'MyAI')+'\n云端中继 · 多模型 · OSS\n\n管理后台: '+ADMIN_API)"><div class="si">ℹ️</div><div class="st">关于 MyAI</div><div class="sa">›</div></div>
 </div>
 
 <!-- 底部导航 -->
 <div class="bnav">
   <div class="bnav-item active" onclick="pg('chat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>对话</span></div>
-  <div class="bnav-item" onclick="pg('feat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>功能</span></div>
+  <div class="bnav-item" onclick="pg('feat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg><span>功能</span></div>
+  <div class="bnav-item" onclick="pg('skill',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span>技能</span></div>
   <div class="bnav-item" onclick="pg('mem',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1 17.9c-3.9-.5-7-3.9-7-7.9 0-.6.1-1.2.2-1.8L9 15v1c0 1.1.9 2 2 2v1.9z"/></svg><span>记忆</span></div>
   <div class="bnav-item" onclick="pg('me',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
 </div>
@@ -222,68 +306,72 @@ body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;
 </div>
 
 <script>
-const ADMIN_API = 'https://zy.tangdou2027.top/admin'
-let token = localStorage.getItem('cloud_token')
-let branding = {}
-let desktopOnline = false
-let pollTimer = null
+"use strict"
+var ADMIN_API = 'https://zy.tangdou2027.top/admin'
+var token = localStorage.getItem('cloud_token')
+var branding = {}
+var desktopOnline = false
+var pollTimer = null
+var lastReplyId = 0
+var shownReplies = {}
 
+// ── 初始化 ──
 async function init() {
   try {
-    const resp = await fetch(ADMIN_API + '/api/branding')
+    var resp = await fetch(ADMIN_API + '/api/branding')
     branding = await resp.json()
-    document.getElementById('loginLogo').textContent = branding.app_name?.[0] || '◆'
+    document.getElementById('loginLogo').textContent = (branding.app_name || 'M')[0]
     document.getElementById('loginTitle').textContent = branding.app_name || 'MyAI'
-    document.getElementById('loginSub').textContent = branding.slogan || '登录你的账号开始使用'
-  } catch {}
+    document.getElementById('loginSub').textContent = branding.slogan || '你的个人数字助手'
+  } catch (e) {}
 
   if (token) {
     try {
-      const resp = await fetch(ADMIN_API + '/api/me', { headers: { Authorization: 'Bearer ' + token } })
+      var resp = await fetch(ADMIN_API + '/api/me', { headers: { Authorization: 'Bearer ' + token } })
       if (resp.ok) {
-        const data = await resp.json()
+        var data = await resp.json()
         enterApp(data.user, data.desktop)
         return
       }
-    } catch {}
+    } catch (e) {}
   }
   document.getElementById('loginPage').style.display = 'flex'
 }
 
 function lTab(t, el) {
-  document.querySelectorAll('.login-tabs span').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.login-tabs span').forEach(function(s){ s.classList.remove('active') })
   el.classList.add('active')
   document.getElementById('lf-login').style.display = t === 'login' ? '' : 'none'
   document.getElementById('lf-register').style.display = t === 'register' ? '' : 'none'
 }
 
 async function doLogin() {
-  const u = document.getElementById('li-user').value.trim()
-  const p = document.getElementById('li-pass').value
+  var u = document.getElementById('li-user').value.trim()
+  var p = document.getElementById('li-pass').value
   if (!u || !p) return
-  document.getElementById('li-err').textContent = ''
+  document.getElementById('li-err').textContent = '登录中…'
   try {
-    const resp = await fetch(ADMIN_API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
-    const data = await resp.json()
-    if (!resp.ok) { document.getElementById('li-err').textContent = data.error; return }
+    var resp = await fetch(ADMIN_API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
+    var data = await resp.json()
+    if (!resp.ok) { document.getElementById('li-err').textContent = data.error || '登录失败'; return }
     token = data.token; localStorage.setItem('cloud_token', token)
     enterApp(data.user, null)
-  } catch { document.getElementById('li-err').textContent = '无法连接服务器' }
+  } catch (e) { document.getElementById('li-err').textContent = '无法连接: ' + e.message }
 }
 
 async function doRegister() {
-  const u = document.getElementById('rg-user').value.trim()
-  const p = document.getElementById('rg-pass').value
-  const e = document.getElementById('rg-email').value.trim()
+  var u = document.getElementById('rg-user').value.trim()
+  var p = document.getElementById('rg-pass').value
+  var e = document.getElementById('rg-email').value.trim()
   if (!u || !p) return
   document.getElementById('rg-err').textContent = ''
   try {
-    const resp = await fetch(ADMIN_API + '/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p,email:e}) })
-    const data = await resp.json()
-    if (!resp.ok) { document.getElementById('rg-err').textContent = data.error; return }
+    var resp = await fetch(ADMIN_API + '/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p,email:e}) })
+    var data = await resp.json()
+    if (!resp.ok) { document.getElementById('rg-err').textContent = data.error || '注册失败'; return }
     token = data.token; localStorage.setItem('cloud_token', token)
     enterApp(data.user, null)
-  } catch { document.getElementById('rg-err').textContent = '无法连接服务器' }
+  } catch (err) { document.getElementById('rg-err').textContent = '无法连接: ' + err.message }
 }
 
 function enterApp(user, desktop) {
@@ -292,60 +380,65 @@ function enterApp(user, desktop) {
   document.getElementById('profName').textContent = user.username
   document.getElementById('profEmail').textContent = user.email || ''
   document.getElementById('psRole').textContent = user.role || 'user'
-  const remaining = (user.token_quota||0) - (user.token_used||0)
+  var remaining = (user.token_quota||0) - (user.token_used||0)
   document.getElementById('tokenPill').textContent = formatTokens(remaining)
   document.getElementById('psQuota').textContent = formatTokens(remaining)
   document.getElementById('psUsed').textContent = formatTokens(user.token_used)
-  // 加载历史对话（刷新不丢失）
   loadHistory()
-  // 检查桌面端在线状态
   checkDesktop()
-  // 启动轮询
   startPolling()
 }
 
-// 加载历史对话
+// ── 历史加载 ──
 async function loadHistory() {
   try {
-    const resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
-    const data = await resp.json()
-    const msgs = data.messages || []
-    // 恢复 lastReplyId
+    var resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
+    var data = await resp.json()
+    var msgs = data.messages || []
     lastReplyId = msgs.length > 0 ? msgs[0].id : 0
-    // 渲染到对话区
-    const area = document.getElementById('chatArea')
-    area.innerHTML = '' // 清空欢迎语
-    const sorted = msgs.slice().reverse() // 按时间正序
-    for (const m of sorted) {
+    var area = document.getElementById('chatArea')
+    area.innerHTML = ''
+    var sorted = msgs.slice().reverse()
+    for (var i = 0; i < sorted.length; i++) {
+      var m = sorted[i]
       if (m.content) addBubble(m.content, 'user')
-      if (m.reply && m.status === 'replied') addBubble(m.reply, 'ai')
+      if (m.reply && m.status === 'replied') { addBubble(m.reply, 'ai'); shownReplies[m.id] = true }
     }
     if (sorted.length === 0) {
-      area.innerHTML = '<div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息通过云端中继转发，不需要局域网，不需要填写 IP。</div>'
+      area.innerHTML = '<div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息通过云端中继转发，不需要局域网。</div>'
     }
-    // 也渲染记忆页
     renderRelayMsgs(msgs)
-  } catch {}
+    // 滚动到底部(让用户直接看到最新消息和输入框)
+    setTimeout(function() { scrollChatToBottom() }, 100)
+  } catch (e) {}
+}
+
+function scrollChatToBottom() {
+  var area = document.getElementById('chatArea')
+  if (area) area.scrollTop = area.scrollHeight
+  // 也滚动整个窗口确保输入框可见
+  window.scrollTo(0, document.body.scrollHeight)
 }
 
 function updateDesktopUI(online) {
   desktopOnline = online
-  const dot = document.getElementById('connDot')
-  const text = document.getElementById('connText')
-  const banner = document.getElementById('connBanner')
-  const icon = document.getElementById('connIcon')
-  const desc = document.getElementById('connDesc')
-  const input = document.getElementById('msgInput')
+  var dot = document.getElementById('connDot')
+  var text = document.getElementById('connText')
+  var banner = document.getElementById('connBanner')
   if (online) {
-    dot.classList.add('online'); text.textContent = '桌面端在线'
-    banner.classList.add('online'); icon.textContent = '✅'
-    desc.innerHTML = '桌面端已连接<small>消息将通过云端中继转发</small>'
-    input.disabled = false; input.placeholder = '输入消息…'
+    dot.classList.add('online'); text.textContent = '在线'
+    banner.classList.add('online')
+    document.getElementById('connIcon').textContent = '✅'
+    document.getElementById('connDesc').innerHTML = '桌面端已连接<small>消息将通过云端中继转发</small>'
+    document.getElementById('msgInput').disabled = false
+    document.getElementById('msgInput').placeholder = '输入消息…'
   } else {
-    dot.classList.remove('online'); text.textContent = '桌面端离线'
-    banner.classList.remove('online'); icon.textContent = '💻'
-    desc.innerHTML = '桌面端未连接<small>请在电脑上启动 MyAI 并登录同账号</small>'
-    input.disabled = true; input.placeholder = '等待桌面端上线…'
+    dot.classList.remove('online'); text.textContent = '离线'
+    banner.classList.remove('online')
+    document.getElementById('connIcon').textContent = '💻'
+    document.getElementById('connDesc').innerHTML = '桌面端未连接<small>请在电脑上启动 MyAI 并登录同账号</small>'
+    document.getElementById('msgInput').disabled = true
+    document.getElementById('msgInput').placeholder = '等待桌面端上线…'
   }
   document.getElementById('dsStatus').textContent = online ? '✅ 在线' : '❌ 离线'
   document.getElementById('dsIcon').textContent = online ? '✅' : '💻'
@@ -353,24 +446,21 @@ function updateDesktopUI(online) {
 
 async function checkDesktop() {
   try {
-    const resp = await fetch(ADMIN_API + '/api/relay/desktop-status', { headers: { Authorization: 'Bearer ' + token } })
-    const data = await resp.json()
+    var resp = await fetch(ADMIN_API + '/api/relay/desktop-status', { headers: { Authorization: 'Bearer ' + token } })
+    var data = await resp.json()
     updateDesktopUI(data.online)
-  } catch { updateDesktopUI(false) }
+  } catch (e) { updateDesktopUI(false) }
 }
 
 function startPolling() {
   if (pollTimer) clearInterval(pollTimer)
-  pollTimer = setInterval(async () => {
-    checkDesktop()
-    fetchReplies()
-  }, 5000)
+  pollTimer = setInterval(function() { checkDesktop(); fetchReplies() }, 5000)
 }
 
-// ── 对话（通过 relay 中继）──
+// ── 发消息 ──
 async function sendMsg() {
-  const input = document.getElementById('msgInput')
-  const text = input.value.trim()
+  var input = document.getElementById('msgInput')
+  var text = input.value.trim()
   if (!text || !desktopOnline) return
   input.value = ''
   addBubble(text, 'user')
@@ -381,71 +471,333 @@ async function sendMsg() {
       body:JSON.stringify({ content: text })
     })
   } catch (e) {
-    document.querySelector('.bubble.ai:last-child')?.remove()
+    var thinkers = document.querySelectorAll('.chat-area .typing')
+    thinkers.forEach(function(t){ t.parentElement.remove() })
     addBubble('发送失败: ' + e.message, 'ai')
   }
 }
 
 function qa(text) { document.getElementById('msgInput').value = text; sendMsg() }
 
-let lastReplyId = 0
+// ── 语音输入(Web Speech API)──
+var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+var recognition = null
+var isRecording = false
+
+function toggleVoice() {
+  if (!SpeechRecognition) { alert('当前浏览器不支持语音识别，请用 Safari 或 Chrome'); return }
+  if (isRecording) { recognition.stop(); return }
+  recognition = new SpeechRecognition()
+  recognition.lang = 'zh-CN'
+  recognition.continuous = false
+  recognition.interimResults = true
+  var input = document.getElementById('msgInput')
+  var micBtn = document.getElementById('micBtn')
+  var oldPlaceholder = input.placeholder
+  var finalText = ''
+
+  recognition.onstart = function() {
+    isRecording = true
+    micBtn.classList.add('recording')
+    input.placeholder = '正在聆听…说话吧'
+  }
+  recognition.onresult = function(event) {
+    var interim = ''
+    for (var i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) finalText += event.results[i][0].transcript
+      else interim += event.results[i][0].transcript
+    }
+    input.value = finalText + interim
+  }
+  recognition.onerror = function(e) {
+    isRecording = false
+    micBtn.classList.remove('recording')
+    input.placeholder = oldPlaceholder
+    if (e.error !== 'no-speech' && e.error !== 'aborted') {
+      input.placeholder = '语音识别失败: ' + e.error
+    }
+  }
+  recognition.onend = function() {
+    isRecording = false
+    micBtn.classList.remove('recording')
+    input.placeholder = oldPlaceholder
+    // 识别结束如果有内容,自动聚焦等待发送
+    if (input.value.trim()) input.focus()
+  }
+  recognition.start()
+}
+
+// ── 拉取回复 ──
 async function fetchReplies() {
   try {
-    const resp = await fetch(ADMIN_API + '/api/relay/messages?since_id=' + lastReplyId, { headers: { Authorization: 'Bearer ' + token } })
-    const data = await resp.json()
+    var resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
+    var data = await resp.json()
     if (data.messages) {
-      for (const msg of data.messages.reverse()) {
+      var sorted = data.messages.slice().reverse()
+      for (var i = 0; i < sorted.length; i++) {
+        var msg = sorted[i]
         if (msg.id > lastReplyId) lastReplyId = msg.id
-        if (msg.status === 'replied' && msg.reply) {
-          // 移除思考动画
-          const thinkings = document.querySelectorAll('.chat-area .typing')
-          thinkings.forEach(t => t.parentElement.remove())
+        if (msg.status === 'replied' && msg.reply && !shownReplies[msg.id]) {
+          shownReplies[msg.id] = true
+          var thinkers = document.querySelectorAll('.chat-area .typing')
+          thinkers.forEach(function(t){ t.parentElement.remove() })
           addBubble(msg.reply, 'ai')
         }
       }
-      // 更新记忆页
       renderRelayMsgs(data.messages)
     }
-  } catch {}
+  } catch (e) {}
 }
 
 function renderRelayMsgs(msgs) {
-  const list = document.getElementById('relayMsgList')
+  var list = document.getElementById('relayMsgList')
   if (!msgs || msgs.length === 0) {
-    list.innerHTML = '<div class="mc" style="text-align:center;color:var(--dim)">暂无对话记录</div>'
+    list.innerHTML = '<div class="mc" style="text-align:center;color:var(--dim2)">暂无对话记录</div>'
     return
   }
-  list.innerHTML = msgs.slice(0, 10).map(m => `<div class="mc"><div class="mt">👤 ${(m.content||'').slice(0,80)}</div>${m.reply ? '<div class="mt" style="color:var(--accent)">🤖 ' + (m.reply||'').slice(0,80) + '</div>' : ''}<div class="mm"><span class="mtag" style="background:rgba(100,255,218,0.1);color:var(--accent)">${m.status}</span><span style="font-size:9px;color:var(--dim);margin-left:auto">${(m.created_at||'').slice(0,16)}</span></div></div>`).join('')
+  list.innerHTML = msgs.slice(0, 15).map(function(m){
+    var tagClass = m.status === 'replied' ? 'tag-replied' : (m.status === 'processing' ? 'tag-processing' : 'tag-pending')
+    var replyShort = m.reply ? m.reply.replace(/<[^>]*>/g,'').slice(0,100) : ''
+    return '<div class="mc"><div class="mt">👤 ' + esc(m.content||'').slice(0,100) + '</div>' +
+      (replyShort ? '<div class="mt" style="color:var(--accent)">🤖 ' + esc(replyShort) + '</div>' : '') +
+      '<div class="mm"><span class="mtag ' + tagClass + '">' + m.status + '</span><span style="font-size:9px;color:var(--dim);margin-left:auto">' + (m.created_at||'').slice(0,16) + '</span></div></div>'
+  }).join('')
 }
 
+// ── 气泡渲染 ──
 function addBubble(html, role, isRaw) {
-  const area = document.getElementById('chatArea')
-  const div = document.createElement('div')
+  var area = document.getElementById('chatArea')
+  var div = document.createElement('div')
   div.className = 'bubble ' + role
-  if (isRaw) div.innerHTML = html; else div.textContent = html
+  if (isRaw) div.innerHTML = html
+  else if (role === 'ai') div.innerHTML = renderRich(html)
+  else div.textContent = html
   area.appendChild(div)
+  // 给图片绑定点击预览
+  var imgs = div.querySelectorAll('img')
+  imgs.forEach(function(img){ img.addEventListener('click', function(){ openImagePreview(img.src) }) })
   area.scrollTop = area.scrollHeight
 }
 
-function goChat() { pg('chat', document.querySelector('.bnav-item')) }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') }
 
+// ── 富媒体 + Markdown 渲染(兼容所有浏览器,无 lookbehind)──
+function renderRich(text) {
+  var s = esc(text)
+  // 先提取 URL 占位(避免被 markdown 处理破坏)
+  var urls = []
+  s = s.replace(/(https?:\/\/[^\s<>]+)/g, function(match) {
+    var idx = urls.length
+    urls.push(match)
+    return '\u0001URL' + idx + '\u0001'
+  })
+
+  // 代码块 ```
+  s = s.replace(/```(\w*)\n?([\s\S]*?)```/g, function(_, lang, code) {
+    return '<pre><code>' + esc(code.trim()) + '</code></pre>'
+  })
+  // 行内代码 `code`
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>')
+  // 粗体 **text**
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  // 标题 # ## ###
+  s = s.replace(/^### (.+)$/gm, '<div style="font-size:14px;font-weight:700;margin:6px 0 2px">$1</div>')
+  s = s.replace(/^## (.+)$/gm, '<div style="font-size:15px;font-weight:700;margin:8px 0 3px">$1</div>')
+  s = s.replace(/^# (.+)$/gm, '<div style="font-size:16px;font-weight:700;margin:8px 0 3px">$1</div>')
+  // 列表 - item / * item
+  s = s.replace(/^[\-\*] (.+)$/gm, '<li>$1</li>')
+  s = s.replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li)/g, '<ul>$1</ul>')
+  // 换行
+  s = s.replace(/\n/g, '<br>')
+
+  // 还原 URL → 媒体标签或链接
+  s = s.replace(/\u0001URL(\d+)\u0001/g, function(_, idx) {
+    var url = urls[parseInt(idx)]
+    var lower = url.toLowerCase()
+    // 图片
+    if (/\.(png|jpg|jpeg|webp|gif)(\?|$)/.test(lower)) {
+      return '<img src="' + url + '" loading="lazy" />'
+    }
+    // 视频
+    if (/\.(mp4|webm|mov)(\?|$)/.test(lower)) {
+      return '<video src="' + url + '" controls></video>'
+    }
+    // 音乐
+    if (/\.(mp3|wav|m4a|aac)(\?|$)/.test(lower)) {
+      return '<audio src="' + url + '" controls></audio>'
+    }
+    // 普通链接
+    return '<a href="' + url + '" target="_blank">' + url + '</a>'
+  })
+
+  // 去掉 <li> 之间的 <br>
+  s = s.replace(/<\/li><br><li>/g, '</li><li>')
+  s = s.replace(/<ul><br>/g, '<ul>')
+  s = s.replace(/<br><\/ul>/g, '</ul>')
+  return s
+}
+
+// ── 图片全屏预览 ──
+function openImagePreview(src) {
+  var overlay = document.createElement('div')
+  overlay.className = 'img-overlay'
+  overlay.innerHTML = '<button class="close">×</button><img src="' + src + '" /><button class="save">保存图片</button>'
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay || e.target.classList.contains('close')) overlay.remove()
+  })
+  overlay.querySelector('.save').addEventListener('click', function(e) {
+    e.stopPropagation()
+    var a = document.createElement('a')
+    a.href = src; a.download = 'myai_image.png'
+    a.target = '_blank'
+    document.body.appendChild(a); a.click(); a.remove()
+  })
+  document.addEventListener('keydown', function esc2(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', esc2) }
+  })
+  document.body.appendChild(overlay)
+}
+
+// ── 导航 ──
+function goChat() { pg('chat', document.querySelector('.bnav-item')) }
 function pg(id, el) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active') })
   document.getElementById('p-'+id).classList.add('active')
-  document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'))
+  document.querySelectorAll('.bnav-item').forEach(function(n){ n.classList.remove('active') })
   if (el) el.classList.add('active')
-  window.scrollTo(0, 0)
+  if (id === 'chat') {
+    // 对话页:滚到底部,确保看到最新消息和输入框
+    setTimeout(function() { scrollChatToBottom() }, 50)
+  } else {
+    window.scrollTo(0, 0)
+  }
   if (id === 'mem') fetchReplies()
+  if (id === 'skill') loadSkills()
 }
 
 function formatTokens(n) {
   if (!n || n < 0) return '0'
-  if (n > 1e6) return (n/1e6).toFixed(1)+'M'
-  if (n > 1e3) return (n/1e3).toFixed(0)+'K'
+  if (n > 1e6) return (n/1e6).toFixed(1) + 'M'
+  if (n > 1e3) return (n/1e3).toFixed(0) + 'K'
   return n.toString()
 }
 
-function logout() { localStorage.removeItem('cloud_token'); token=null; location.reload() }
+// ── 技能市场 ──
+async function loadSkills() {
+  var list = document.getElementById('skillList')
+  if (!list) return
+  try {
+    var resp = await fetch(ADMIN_API + '/api/skills')
+    var data = await resp.json()
+    var skills = data.skills || []
+    if (skills.length === 0) {
+      list.innerHTML = '<div class="mc" style="text-align:center;color:var(--dim2)">暂无技能，管理员可在后台添加</div>'
+      return
+    }
+    // 按 category 分大类,再按 skill_group 分组
+    var byCat = {}
+    for (var i = 0; i < skills.length; i++) {
+      var s = skills[i]
+      var cat = s.category || '通用'
+      if (!byCat[cat]) byCat[cat] = { groups: {}, standalone: [] }
+      if (s.skill_group) {
+        if (!byCat[cat].groups[s.skill_group]) byCat[cat].groups[s.skill_group] = []
+        byCat[cat].groups[s.skill_group].push(s)
+      } else {
+        byCat[cat].standalone.push(s)
+      }
+    }
+
+    var catOrder = ['编程','办公','学习','创意','生活','通用']
+    var html = ''
+    for (var ci = 0; ci < catOrder.length; ci++) {
+      var cat = catOrder[ci]
+      var catData = byCat[cat]
+      if (!catData) continue
+      var total = catData.standalone.length
+      var groupCount = Object.keys(catData.groups).length
+      for (var gk in catData.groups) total += catData.groups[gk].length
+      if (total === 0) continue
+
+      // 分类标题(可折叠整个分类)
+      html += '<div class="sk-cat-header" onclick="toggleSkillCat(this)" style="margin:16px 0 8px;padding:10px 14px;background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(124,77,255,0.04));border:1px solid rgba(0,229,255,0.1);border-radius:12px;display:flex;align-items:center;gap:8px;cursor:pointer">' +
+        '<span style="font-size:16px">' + skillCatIcon(cat) + '</span>' +
+        '<b style="font-size:14px;color:var(--accent,#00e5ff);flex:1">' + esc(cat) + '</b>' +
+        '<small style="color:var(--dim2)">' + total + ' 个' + (groupCount > 0 ? ' · ' + groupCount + ' 组' : '') + '</small>' +
+        '<span class="sk-cat-arrow" style="color:var(--dim);transition:.2s">▼</span></div>'
+
+      html += '<div class="sk-cat-body" style="display:block">'
+      // 技能组(默认折叠,点击展开)
+      var groupNames = Object.keys(catData.groups)
+      for (var gi = 0; gi < groupNames.length; gi++) {
+        var gn = groupNames[gi]
+        var gs = catData.groups[gn]
+        html += '<div onclick="toggleSkillGroup(\'skg_' + ci + '_' + gi + '\')" style="padding:10px 14px;background:var(--card);border:1px solid rgba(124,77,255,0.08);border-radius:12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.15s">' +
+          '<span style="font-size:14px">📦</span>' +
+          '<b style="font-size:13px;color:var(--accent2,#7c6ff0);flex:1">' + esc(gn) + '</b>' +
+          '<small style="color:var(--dim)">' + gs.length + ' 技能</small>' +
+          '<span id="skg_' + ci + '_' + gi + '_arrow" style="color:var(--dim);transition:.2s">▶</span></div>'
+        html += '<div id="skg_' + ci + '_' + gi + '" style="display:none;padding-left:12px">'
+        for (var si = 0; si < gs.length; si++) {
+          html += renderSkillCard(gs[si])
+        }
+        html += '</div>'
+      }
+      // 独立技能
+      for (var si2 = 0; si2 < catData.standalone.length; si2++) {
+        html += renderSkillCard(catData.standalone[si2])
+      }
+      html += '</div>'
+    }
+    list.innerHTML = html
+  } catch (e) {
+    list.innerHTML = '<div class="mc" style="text-align:center;color:var(--dim2)">加载失败</div>'
+  }
+}
+
+function toggleSkillGroup(id) {
+  var body = document.getElementById(id)
+  var arrow = document.getElementById(id + '_arrow')
+  if (!body) return
+  var shown = body.style.display !== 'none'
+  body.style.display = shown ? 'none' : 'block'
+  if (arrow) arrow.textContent = shown ? '▶' : '▼'
+}
+
+function toggleSkillCat(headerEl) {
+  var body = headerEl.nextElementSibling
+  var arrow = headerEl.querySelector('.sk-cat-arrow')
+  if (!body) return
+  var shown = body.style.display !== 'none'
+  body.style.display = shown ? 'none' : 'block'
+  if (arrow) arrow.style.transform = shown ? 'rotate(-90deg)' : 'rotate(0)'
+}
+
+function skillCatIcon(cat) {
+  var icons = {'编程':'💻','办公':'💼','学习':'📚','创意':'🎨','生活':'🌱','通用':'🔧'}
+  return icons[cat] || '🔧'
+}
+
+function renderSkillCard(s) {
+  return '<div class="fc" onclick="useSkill(\'' + (s.title||'').replace(/'/g,"") + '\')" style="margin-bottom:5px">' +
+    '<div class="fi" style="background:' + skillColor(s.category) + ';width:36px;height:36px;font-size:17px">' + (s.icon_url ? (s.icon_url.length<4?s.icon_url:'<img src="'+s.icon_url+'" style="width:20px;height:20px;border-radius:5px"/>') : '🎯') + '</div>' +
+    '<div style="flex:1"><div class="ft" style="font-size:13px">' + esc(s.title||'') + '</div>' +
+    '<div class="fd" style="font-size:11px">' + esc((s.description||'').slice(0,50)) + '</div></div>' +
+    '<div class="fa" style="font-size:13px">›</div></div>'
+}
+
+function skillColor(cat) {
+  var colors = {'办公':'rgba(0,229,255,0.1)','编程':'rgba(124,77,255,0.1)','创意':'rgba(255,64,129,0.1)','通用':'rgba(0,255,170,0.1)','生活':'rgba(255,213,79,0.1)'}
+  return colors[cat] || 'rgba(0,229,255,0.1)'
+}
+
+function useSkill(title) {
+  pg('chat', document.querySelectorAll('.bnav-item')[0])
+  document.getElementById('msgInput').value = '使用技能：' + title
+  sendMsg()
+}
+
+function logout() { localStorage.removeItem('cloud_token'); token = null; location.reload() }
 
 init()
 </script>

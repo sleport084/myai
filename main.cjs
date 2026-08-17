@@ -16,7 +16,7 @@ const { autoUpdater } = require('electron-updater')
 // 内置浏览器子系统(用系统 Chrome,不打包 Chromium)
 const { BROWSER_EMBED_PARTITION, createBrowserEmbedHost } = require('./browser-embed-host.cjs')
 const { createBrowserDataStore } = require('./browser-data.cjs')
-const { createBaiLongmaChromeManager } = require('./bailongma-chrome.cjs')
+const { createMyAIChromeManager } = require('./bailongma-chrome.cjs')
 const { bundledBrowserRoot } = require('./playwright-runtime.cjs')
 
 // 暴露 systemPreferences 给 src 层：macos-speech.js 需要它调 askForMediaAccess('microphone')
@@ -25,22 +25,7 @@ globalThis.bailongmaSystemPreferences = systemPreferences
 
 const IS_DEV = !app.isPackaged
 const WINDOWS_APP_USER_MODEL_ID = 'com.myai.app'
-// 会话隔离(参考小裂变): 不同账号用独立数据目录,互不可见
-// userData/accounts/<username>/ 存 jarvis.db 等; 凭据/token 仍在根 userData(全局)
-const BASE_USER_DIR = app.getPath('userData')
-function resolveAccountUserDir() {
-  try {
-    const userFile = path.join(BASE_USER_DIR, '.cloud-auth-user')
-    if (!fs.existsSync(userFile)) return BASE_USER_DIR
-    const user = JSON.parse(fs.readFileSync(userFile, 'utf-8'))
-    const username = String(user?.username || '').trim()
-    if (!username || !/^[A-Za-z0-9_\u4e00-\u9fa5.-]{1,32}$/.test(username)) return BASE_USER_DIR
-    const dir = path.join(BASE_USER_DIR, 'accounts', username)
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
-    return dir
-  } catch { return BASE_USER_DIR }
-}
-const USER_DIR = resolveAccountUserDir()
+const USER_DIR = app.getPath('userData')
 const CODE_ROOT = app.getAppPath()
 const RESOURCE_ROOT = CODE_ROOT
 const BACKEND_ENTRY = path.join(CODE_ROOT, 'src', 'index.js')
@@ -181,7 +166,7 @@ global.getBailongmaWindowLayoutSnapshot = function () {
 // ─── 内置 Chrome 浏览器子系统 ───
 // MyAI专用 Chrome:独立 profile 的真 Chrome 进程,通过 CDP 让 agent 自动化浏览。
 // 不打包 Chromium——优先用系统已装 Chrome(BAILONGMA_BROWSER_PATH 可覆盖),找不到则 browser_* 工具报 CHROME_NOT_INSTALLED。
-const bailongmaChrome = createBaiLongmaChromeManager({
+const bailongmaChrome = createMyAIChromeManager({
   userDataDir: USER_DIR,
   bundledBrowserRoot: bundledBrowserRoot({
     isPackaged: app.isPackaged,
@@ -707,29 +692,6 @@ function setupAutoUpdater() {
 
 ipcMain.handle('app:get-version', () => app.getVersion())
 
-// 保存图片:弹出"另存为"对话框,将 base64 图片写入用户选择的路径
-ipcMain.handle('save-image', async (_e, { base64, ext, filename } = {}) => {
-  try {
-    const { dialog } = require('electron')
-    const safeName = (filename || 'image').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60)
-    const result = await dialog.showSaveDialog({
-      title: '保存图片',
-      defaultPath: `${safeName}.${ext || 'png'}`,
-      filters: [
-        { name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] },
-        { name: '所有文件', extensions: ['*'] },
-      ],
-    })
-    if (result.canceled || !result.filePath) return { saved: false }
-    const fs = require('fs')
-    fs.writeFileSync(result.filePath, Buffer.from(base64 || '', 'base64'))
-    return { saved: true, path: result.filePath }
-  } catch (e) {
-    console.error('[save-image]', e.message)
-    return { saved: false, error: e.message }
-  }
-})
-
 ipcMain.handle('updater:check-for-updates', async () => {
   if (IS_DEV) {
     sendUpdaterStatus({ stage: 'dev' })
@@ -811,60 +773,16 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null)
 
-  // ── 云端认证检查(参考小裂变 SessionManager:凭据加密存储 + token 自动续期) ──
+  // ── 云端认证检查 ──
+  // 启动时先检查本地缓存的 token 是否有效。无效则显示登录页面。
   const CLOUD_AUTH_URL = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
   const TOKEN_FILE = path.join(USER_DIR, '.cloud-auth-token')
-  const CREDS_FILE = path.join(USER_DIR, '.cloud-auth-creds')   // safeStorage 加密
   let cloudAuthed = false
 
-  // 凭据安全存取(safeStorage 是 OS 级加密: macOS Keychain / Win DPAPI)
-  const { safeStorage } = require('electron')
-  function saveCredentials(username, password) {
-    try {
-      if (!safeStorage.isEncryptionAvailable()) return
-      const blob = safeStorage.encryptString(JSON.stringify({ username, password }))
-      fs.writeFileSync(CREDS_FILE, blob, { mode: 0o600 })
-    } catch (e) { console.warn('[main] 凭据保存失败:', e.message) }
-  }
-  function loadCredentials() {
-    try {
-      if (!fs.existsSync(CREDS_FILE) || !safeStorage.isEncryptionAvailable()) return null
-      const json = safeStorage.decryptString(fs.readFileSync(CREDS_FILE))
-      return JSON.parse(json)
-    } catch { return null }
-  }
-  function writeTokenFiles(token, user) {
-    fs.writeFileSync(TOKEN_FILE, token, { mode: 0o600 })
-    try { fs.writeFileSync(path.join(USER_DIR, '.cloud-auth-user'), JSON.stringify(user), { mode: 0o600 }) } catch {}
-    try { fs.writeFileSync(path.join(CODE_ROOT, '.cloud-auth-token'), token, { mode: 0o600 }) } catch {}
-    if (process.env.APPDATA) {
-      try { fs.writeFileSync(path.join(process.env.APPDATA, 'myai', '.cloud-auth-token'), token, { mode: 0o600 }) } catch {}
-    }
-  }
-
-  // token 自动续期: 用保存的凭据静默重新登录(参考小裂变的会话自动恢复)
-  async function autoRefreshToken() {
-    const creds = loadCredentials()
-    if (!creds) return false
-    try {
-      const resp = await fetch(`${CLOUD_AUTH_URL}/api/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: creds.username, password: creds.password }),
-        signal: AbortSignal.timeout(8000),
-      })
-      if (!resp.ok) return false   // 密码改了/网络问题 → 走登录窗
-      const data = await resp.json()
-      if (!data.token) return false
-      writeTokenFiles(data.token, data.user)
-      console.log('[main] token 已自动续期(凭据静默登录)')
-      return true
-    } catch { return false }
-  }
-
   try {
-    let cachedToken = fs.existsSync(TOKEN_FILE) ? fs.readFileSync(TOKEN_FILE, 'utf-8').trim() : null
+    const cachedToken = fs.existsSync(TOKEN_FILE) ? fs.readFileSync(TOKEN_FILE, 'utf-8').trim() : null
     if (cachedToken) {
+      // 验证 token 有效性
       const resp = await fetch(`${CLOUD_AUTH_URL}/api/me`, {
         headers: { Authorization: `Bearer ${cachedToken}` },
         signal: AbortSignal.timeout(5000),
@@ -873,14 +791,8 @@ app.whenReady().then(async () => {
         cloudAuthed = true
         console.log('[main] 云端认证通过（token 有效）')
       } else {
-        console.log('[main] token 过期,尝试自动续期…')
-        if (await autoRefreshToken()) { cloudAuthed = true }
-        else console.log('[main] 自动续期失败，需要重新登录')
+        console.log('[main] 云端 token 无效，需要重新登录')
       }
-    } else if (loadCredentials()) {
-      // 无 token 但有凭据(如 token 被清) → 静默恢复
-      console.log('[main] 有保存的凭据,尝试静默登录…')
-      if (await autoRefreshToken()) { cloudAuthed = true }
     }
   } catch (err) {
     console.log('[main] 云端认证检查失败（离线模式可能）:', err?.message)
@@ -912,10 +824,14 @@ app.whenReady().then(async () => {
       ipcMain.once('cloud-auth-success', (_e, dataStr) => {
         try {
           const data = JSON.parse(dataStr)
-          writeTokenFiles(data.token, data.user)
-          // 保存凭据(safeStorage 加密)供自动续期
-          if (data._credentials && data._credentials.username) {
-            saveCredentials(data._credentials.username, data._credentials.password)
+          // 写到 USER_DIR（主路径）
+          fs.writeFileSync(TOKEN_FILE, data.token, { mode: 0o600 })
+          fs.writeFileSync(path.join(USER_DIR, '.cloud-auth-user'), JSON.stringify(data.user), { mode: 0o600 })
+          // 也写到 CODE_ROOT（后端开发模式的回退路径）
+          try { fs.writeFileSync(path.join(CODE_ROOT, '.cloud-auth-token'), data.token, { mode: 0o600 }) } catch {}
+          // 也写到 APPDATA/myai（Windows 回退路径）
+          if (process.env.APPDATA) {
+            try { fs.writeFileSync(path.join(process.env.APPDATA, 'myai', '.cloud-auth-token'), data.token, { mode: 0o600 }) } catch {}
           }
           console.log('[main] 云端登录成功:', data.user?.username, 'token 已写入', TOKEN_FILE)
         } catch (err) {
@@ -926,20 +842,6 @@ app.whenReady().then(async () => {
       })
     })
   }
-
-  // 定期 token 续期(每 6 小时静默刷新,防止 7 天过期)
-  setInterval(async () => {
-    const cachedToken = fs.existsSync(TOKEN_FILE) ? fs.readFileSync(TOKEN_FILE, 'utf-8').trim() : null
-    if (!cachedToken) return
-    try {
-      const resp = await fetch(`${CLOUD_AUTH_URL}/api/me`, {
-        headers: { Authorization: `Bearer ${cachedToken}` },
-        signal: AbortSignal.timeout(5000),
-      }).catch(() => null)
-      if (resp && resp.ok) return  // 还有效
-      if (await autoRefreshToken()) console.log('[main] 定期续期成功')
-    } catch {}
-  }, 6 * 60 * 60 * 1000)
 
   try {
     backendPort = await findFreePort(3721)

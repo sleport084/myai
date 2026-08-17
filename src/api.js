@@ -568,6 +568,61 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
       return
     }
 
+    // ═══ 本地工作流 API(桌面端定制,存本地 SQLite) ═══
+    if (url.pathname.startsWith('/workflow/')) {
+      const { listWorkflows, createWorkflow, updateWorkflow, deleteWorkflow, runWorkflowNow, listTaskLog, validateSpec } = await import('./workflow-local.js')
+      const sub = url.pathname.slice('/workflow/'.length)
+
+      // GET /workflow/list
+      if (req.method === 'GET' && sub === 'list') {
+        jsonResponse(res, 200, { ok: true, workflows: listWorkflows() }); return
+      }
+      // POST /workflow/create  {name, description, spec, cron_expr?}
+      if (req.method === 'POST' && sub === 'create') {
+        const body = await readJsonBody(req)
+        try {
+          const id = createWorkflow(body)
+          jsonResponse(res, 200, { ok: true, id })
+        } catch (e) { jsonResponse(res, 400, { ok: false, error: e.message }) }
+        return
+      }
+      // POST /workflow/update/:id
+      if (req.method === 'POST' && /^update\/\d+$/.test(sub)) {
+        const body = await readJsonBody(req)
+        try {
+          updateWorkflow(parseInt(sub.split('/')[1]), body)
+          jsonResponse(res, 200, { ok: true })
+        } catch (e) { jsonResponse(res, 400, { ok: false, error: e.message }) }
+        return
+      }
+      // POST /workflow/delete/:id
+      if (req.method === 'POST' && /^delete\/\d+$/.test(sub)) {
+        deleteWorkflow(parseInt(sub.split('/')[1]))
+        jsonResponse(res, 200, { ok: true }); return
+      }
+      // POST /workflow/run/:id
+      if (req.method === 'POST' && /^run\/\d+$/.test(sub)) {
+        const id = parseInt(sub.split('/')[1])
+        runWorkflowNow(id, 'manual')
+          .then(r => jsonResponse(res, 200, { ok: true, ...r }))
+          .catch(e => jsonResponse(res, 500, { ok: false, error: e.message }))
+        return
+      }
+      // GET /workflow/tasks?limit=
+      if (req.method === 'GET' && sub === 'tasks') {
+        jsonResponse(res, 200, { ok: true, tasks: listTaskLog(parseInt(url.searchParams.get('limit') || '50')) }); return
+      }
+      // POST /workflow/validate  {spec}
+      if (req.method === 'POST' && sub === 'validate') {
+        const body = await readJsonBody(req)
+        try { validateSpec(body.spec); jsonResponse(res, 200, { ok: true }) }
+        catch (e) { jsonResponse(res, 400, { ok: false, error: e.message }) }
+        return
+      }
+      jsonResponse(res, 404, { ok: false, error: 'unknown workflow route' })
+      return
+    }
+
     // GET /quota
     if (req.method === 'GET' && url.pathname === '/quota') {
       jsonResponse(res, 200, getQuotaStatus())
@@ -1026,6 +1081,29 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
         }
       } catch {
         res.writeHead(404); res.end('video file not found')
+      }
+      return
+    }
+
+    // GET /media/chat/:filename — serve AI-generated image files from sandbox/media/chat
+    if (req.method === 'GET' && url.pathname.startsWith('/media/chat/')) {
+      const raw = url.pathname.slice('/media/chat/'.length)
+      const filename = path.basename(decodeURIComponent(raw))
+      const chatDir = path.join(SANDBOX_PATH, 'media', 'chat')
+      const filePath = path.join(chatDir, filename)
+      const resolvedFile = path.resolve(filePath)
+      const resolvedDir  = path.resolve(chatDir)
+      if (!resolvedFile.startsWith(resolvedDir + path.sep) && resolvedFile !== resolvedDir) {
+        res.writeHead(403); res.end('forbidden'); return
+      }
+      const mimeMap = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.webp': 'image/webp', '.gif': 'image/gif' }
+      const contentType = mimeMap[path.extname(filename).toLowerCase()] || 'image/png'
+      try {
+        const stat = fs.statSync(filePath)
+        res.writeHead(200, { 'Content-Type': contentType, 'Content-Length': stat.size, 'Cache-Control': 'no-cache' })
+        fs.createReadStream(filePath).pipe(res)
+      } catch {
+        res.writeHead(404); res.end('image file not found')
       }
       return
     }

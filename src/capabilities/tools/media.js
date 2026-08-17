@@ -197,6 +197,32 @@ export async function execGenerateMusic({ prompt, lyrics, instrumental }) {
   if (!prompt) return '错误：未提供音乐描述'
   if (isDailyLimitReached('music')) return '错误：今日音乐生成配额已用完'
 
+  // ① 优先走云端(多米)
+  const cloudToken = await getCachedCloudToken()
+  if (cloudToken) {
+    try {
+      const urls = await generateMusicViaCloud({ prompt, lyrics, instrumental, cloudToken })
+      if (urls?.length) {
+        // 下载到本地
+        const ts = nowTimestamp().replace(/[:.+]/g, '-').slice(0, 19)
+        const fname = `music_${ts}.mp3`
+        const resolved = path.resolve(SANDBOX_ROOT, 'music', fname)
+        fs.mkdirSync(path.dirname(resolved), { recursive: true })
+        try {
+          const mResp = await fetch(urls[0])
+          if (mResp.ok) fs.writeFileSync(resolved, Buffer.from(await mResp.arrayBuffer()))
+        } catch {}
+        const relPath = `music/${fname}`
+        emitEvent('media_mode', { mode: 'music', action: 'show', src: '/media/music/' + fname, title: prompt.slice(0, 40) || '生成音乐' })
+        emitEvent('music_created', { path: relPath, prompt: prompt.slice(0, 60), url: urls[0] })
+        emitEvent('action', { tool: 'generate_music', summary: `生成音乐 (云端)`, detail: prompt.slice(0, 60) })
+        console.log(`[music] 云端生成: ${relPath}`)
+        return `音乐已生成（云端）：\n${urls.join('\n')}\n本地缓存：${relPath}`
+      }
+    } catch (e) { console.log(`[music] 云端失败,回退本地: ${e.message}`) }
+  }
+
+  // ② 回退本地 provider
   const result = await callCapability('music', { prompt, lyrics, instrumental })
 
   const ts = nowTimestamp().replace(/[:.+]/g, '-').slice(0, 19)
@@ -211,6 +237,100 @@ export async function execGenerateMusic({ prompt, lyrics, instrumental }) {
   return `音乐已生成：${relPath}（时长约 ${result.duration ?? '?'} 秒）`
 }
 
+// ── 云端图片生成（走管理后台统一接口 / 多米 API）──────────────────────────
+// 优先走云端(若管理后台已配置媒体 API Key),失败则回退本地 provider。
+// 这样图片生成质量统一由后台多米 API 控制,客户端无需单独配 Key。
+const CLOUD_ADMIN_URL = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
+
+async function generateImageViaCloud({ prompt, aspect_ratio, n, cloudToken }) {
+  // 创建任务
+  const createResp = await fetch(`${CLOUD_ADMIN_URL}/api/media/image`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cloudToken}` },
+    body: JSON.stringify({ prompt, aspect_ratio, n }),
+  })
+  const createData = await createResp.json()
+  if (!createResp.ok) throw new Error(createData.error || '云端图片接口错误')
+
+  // 同步直接返回
+  if (createData.urls?.length) return createData.urls
+
+  // 异步任务:轮询
+  if (createData.task_id) {
+    const taskId = createData.task_id
+    const deadline = Date.now() + 120000  // 最多等 2 分钟
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 3000))
+      const qResp = await fetch(`${CLOUD_ADMIN_URL}/api/media/task/${taskId}`, {
+        headers: { Authorization: `Bearer ${cloudToken}` },
+      })
+      const qData = await qResp.json()
+      if (qData.status === 'done' && qData.urls?.length) return qData.urls
+      if (qData.status === 'failed') throw new Error(qData.error || '云端任务失败')
+    }
+    throw new Error('云端任务超时')
+  }
+  throw new Error('云端接口未返回结果')
+}
+
+async function getCachedCloudToken() {
+  try {
+    const { getCachedToken } = await import('../../cloud-auth.js')
+    return getCachedToken()
+  } catch { return null }
+}
+
+// ── 云端音乐生成(走管理后台 / 多米)──────────────────────────
+async function generateMusicViaCloud({ prompt, lyrics, instrumental, cloudToken }) {
+  const resp = await fetch(`${CLOUD_ADMIN_URL}/api/media/music`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cloudToken}` },
+    body: JSON.stringify({ prompt, lyrics, instrumental }),
+  })
+  const data = await resp.json()
+  if (!resp.ok) throw new Error(data.error || '云端音乐接口错误')
+  // 异步任务:轮询
+  if (data.task_id) {
+    const deadline = Date.now() + 300000  // 最多 5 分钟
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 5000))
+      const qResp = await fetch(`${CLOUD_ADMIN_URL}/api/media/task/${data.task_id}`, {
+        headers: { Authorization: `Bearer ${cloudToken}` },
+      })
+      const qData = await qResp.json()
+      if (qData.status === 'done') return qData.urls || qData.result || []
+      if (qData.status === 'failed') throw new Error(qData.error || '云端音乐任务失败')
+    }
+    throw new Error('云端音乐任务超时')
+  }
+  throw new Error('云端接口未返回结果')
+}
+
+// ── 云端视频生成(走管理后台 / 多米)──────────────────────────
+async function generateVideoViaCloud({ prompt, images, cloudToken }) {
+  const resp = await fetch(`${CLOUD_ADMIN_URL}/api/media/video`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${cloudToken}` },
+    body: JSON.stringify({ prompt, images }),
+  })
+  const data = await resp.json()
+  if (!resp.ok) throw new Error(data.error || '云端视频接口错误')
+  if (data.task_id) {
+    const deadline = Date.now() + 600000  // 最多 10 分钟
+    while (Date.now() < deadline) {
+      await new Promise(r => setTimeout(r, 8000))
+      const qResp = await fetch(`${CLOUD_ADMIN_URL}/api/media/task/${data.task_id}`, {
+        headers: { Authorization: `Bearer ${cloudToken}` },
+      })
+      const qData = await qResp.json()
+      if (qData.status === 'done') return qData.urls || qData.result || []
+      if (qData.status === 'failed') throw new Error(qData.error || '云端视频任务失败')
+    }
+    throw new Error('云端视频任务超时')
+  }
+  throw new Error('云端接口未返回结果')
+}
+
 // generate_image：生成图片
 export async function execGenerateImage({ prompt, aspect_ratio = '1:1', n = 1 }) {
   if (!prompt) return '错误：未提供图片描述'
@@ -219,26 +339,71 @@ export async function execGenerateImage({ prompt, aspect_ratio = '1:1', n = 1 })
   const ratio = validRatios.has(aspect_ratio) ? aspect_ratio : '1:1'
   const count = Math.min(Math.max(Math.floor(n) || 1, 1), 4)
 
-  // 根据配置选择图片生成 provider
-  const mediaCreds = getMediaCredentials()
-  const imageProvider = mediaCreds.imageProvider || 'minimax'
-  const providerMap = { minimax: 'minimax', openai: 'openai-image' }
-  const providerName = providerMap[imageProvider] || 'minimax'
+  let urls = null
+  let source = ''
 
-  // 检查 provider 是否已注册
-  const provider = getProviderByName(providerName)
-  if (!provider) {
-    if (imageProvider === 'openai') {
-      return '错误：OpenAI 图片生成未配置。请在「设置 → 媒体」中填写 OpenAI API Key。'
+  // ① 优先尝试云端(管理后台统一接口),若已登录且有配置则用云端
+  const cloudToken = await getCachedCloudToken()
+  if (cloudToken) {
+    try {
+      const cloudUrls = await generateImageViaCloud({ prompt, aspect_ratio: ratio, n: count, cloudToken })
+      if (cloudUrls?.length) { urls = cloudUrls; source = '云端' }
+    } catch (e) {
+      console.log(`[image] 云端失败,回退本地: ${e.message}`)
     }
-    return '错误：MiniMax 未配置。请在「设置 → 媒体」中填写 MiniMax API Key。'
   }
 
-  const result = await callCapability('image', { prompt, aspect_ratio: ratio, n: count }, providerName)
+  // ② 回退:本地 provider(MiniMax / OpenAI)
+  if (!urls) {
+    const mediaCreds = getMediaCredentials()
+    const imageProvider = mediaCreds.imageProvider || 'minimax'
+    const providerMap = { minimax: 'minimax', openai: 'openai-image' }
+    const providerName = providerMap[imageProvider] || 'minimax'
+    const provider = getProviderByName(providerName)
+    if (!provider) {
+      if (imageProvider === 'openai') return '错误：OpenAI 图片生成未配置。请在「设置 → 媒体」中填写 OpenAI API Key。'
+      return '错误：MiniMax 未配置。请在「设置 → 媒体」中填写 MiniMax API Key。'
+    }
+    const result = await callCapability('image', { prompt, aspect_ratio: ratio, n: count }, providerName)
+    urls = result.urls; source = providerName
+  }
 
-  emitEvent('image_created', { urls: result.urls, prompt: prompt.slice(0, 60) })
-  console.log(`[image] 已生成 ${result.urls.length} 张图片 (provider: ${providerName})`)
-  return `图片已生成（${result.urls.length} 张）：\n${result.urls.join('\n')}`
+  if (!urls?.length) return '错误：图片生成失败，未返回图片'
+
+  // ③ 把第一张图片下载到本地 media 目录(方便随时保存/离线查看)
+  const localPaths = []
+  for (let i = 0; i < urls.length; i++) {
+    const u = urls[i]
+    if (u.startsWith('data:')) continue  // base64 跳过
+    try {
+      const imgResp = await fetch(u)
+      if (imgResp.ok) {
+        const buf = Buffer.from(await imgResp.arrayBuffer())
+        const ext = (u.match(/\.(png|jpe?g|webp|gif)/i)?.[1] || 'png').toLowerCase()
+        const fname = `img_${nowTimestamp()}_${i}.${ext === 'jpg' ? 'jpg' : ext}`
+        const mediaDir = path.join(SANDBOX_ROOT, 'media', 'chat')
+        fs.mkdirSync(mediaDir, { recursive: true })
+        const fpath = path.join(mediaDir, fname)
+        fs.writeFileSync(fpath, buf)
+        localPaths.push(`/media/chat/${fname}`)
+      }
+    } catch (e) { console.log(`[image] 保存失败 ${i}: ${e.message}`) }
+  }
+
+  // ④ 自动弹出媒体预览(展示第一张,可全屏查看)
+  if (localPaths.length > 0) {
+    emitEvent('media_mode', { mode: 'image', action: 'show', url: localPaths[0], title: prompt.slice(0, 40) || '生成图片' })
+  } else {
+    emitEvent('media_mode', { mode: 'image', action: 'show', url: urls[0], title: prompt.slice(0, 40) || '生成图片' })
+  }
+
+  emitEvent('image_created', { urls, prompt: prompt.slice(0, 60) })
+  emitEvent('action', { tool: 'generate_image', summary: `生成 ${urls.length} 张图片 (${source})`, detail: prompt.slice(0, 60) })
+  console.log(`[image] 已生成 ${urls.length} 张图片 (${source}), 本地保存 ${localPaths.length} 张`)
+
+  // 返回:本地路径(渲染器可直接显示+保存) + 原始 URL
+  const displayUrls = localPaths.length > 0 ? localPaths : urls
+  return `图片已生成（${urls.length} 张,${source}）。已自动打开预览，可在媒体窗口右键保存：\n${displayUrls.join('\n')}`
 }
 
 export function execMediaMode(args = {}) {
@@ -533,6 +698,34 @@ export async function execGenerateVideo(args = {}) {
     return JSON.stringify({ ok: false, tool: 'generate_video', error: '至少提供 prompt（文生视频）或图片（图生/首尾帧）；或用 action="open" 仅打开输入面板。' })
   }
 
+  // ① 优先走云端(多米视频 API)
+  const cloudToken = await getCachedCloudToken()
+  if (cloudToken) {
+    try {
+      const urls = await generateVideoViaCloud({ prompt, images, cloudToken })
+      if (urls?.length) {
+        // 下载到本地
+        const ts = nowTimestamp().replace(/[:.+]/g, '-').slice(0, 19)
+        const fname = `video_${ts}.mp4`
+        const resolved = path.resolve(SANDBOX_ROOT, 'videos', fname)
+        fs.mkdirSync(path.dirname(resolved), { recursive: true })
+        try {
+          const vResp = await fetch(urls[0])
+          if (vResp.ok) fs.writeFileSync(resolved, Buffer.from(await vResp.arrayBuffer()))
+        } catch {}
+        const relPath = `videos/${fname}`
+        emitEvent('media_mode', { mode: 'video', action: 'show', url: '/media/video/' + fname, title: prompt.slice(0, 40) || '生成视频' })
+        emitEvent('action', { tool: 'generate_video', summary: `生成视频 (云端)`, detail: prompt.slice(0, 60) })
+        console.log(`[video] 云端生成: ${relPath}`)
+        return JSON.stringify({ ok: true, tool: 'generate_video', video: '/media/video/' + fname, url: urls[0], message: `视频已生成（云端）：${urls.join('\n')}\n本地缓存：${relPath}` })
+      }
+    } catch (e) {
+      console.log(`[video] 云端失败,回退本地: ${e.message}`)
+      // 落到本地 Seedance
+    }
+  }
+
+  // ② 回退:本地 Seedance
   let ratio = SEEDANCE_RATIOS.has(args.ratio) ? args.ratio : '16:9'
   // adaptive=按参考图比例输出，仅图生/首尾帧有意义；文生视频无图可适配，回退 16:9
   if (ratio === 'adaptive' && !images.length) ratio = '16:9'

@@ -3,22 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
 <title>MyAI 管理后台</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,sans-serif;background:#0a0a14;color:#e0e0e8}
+body{font-family:-apple-system,sans-serif;background:#0a0a14;color:#e0e0e8;font-size:14px}
 .login{max-width:360px;margin:80px auto;padding:32px;background:#12121e;border-radius:16px;border:1px solid rgba(255,255,255,0.06)}
 .login h1{font-size:22px;margin-bottom:20px;text-align:center}
 .login input{width:100%;padding:11px 14px;margin-bottom:12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:10px;color:#e0e0e8;font-size:14px;outline:none}
 .login button{width:100%;padding:11px;background:#64ffda;color:#0a0a14;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer}
-.login .err{color:#f87171;font-size:12px;margin-bottom:8px}
+.login .err{color:#f87171;font-size:12px;margin-bottom:8px;min-height:16px}
 .dash{display:none}
-.topbar{display:flex;align-items:center;padding:12px 20px;background:#12121e;border-bottom:1px solid rgba(255,255,255,0.06)}
-.topbar .logo{font-weight:700;color:#64ffda;font-size:16px}
-.topbar .nav{display:flex;gap:4px;margin-left:24px}
-.topbar .nav span{padding:6px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:#7a7a9a;transition:.15s}
+.topbar{display:flex;align-items:center;padding:12px 20px;background:#12121e;border-bottom:1px solid rgba(255,255,255,0.06);position:sticky;top:0;z-index:10}
+.topbar .logo{font-weight:700;color:#64ffda;font-size:16px;white-space:nowrap}
+.topbar .nav{display:flex;gap:2px;margin-left:20px;flex-wrap:wrap}
+.topbar .nav span{padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#7a7a9a;transition:.15s;white-space:nowrap}
 .topbar .nav span.active{color:#64ffda;background:rgba(100,255,218,0.08)}
-.topbar .out{margin-left:auto;padding:6px 14px;background:rgba(248,113,113,0.1);color:#f87171;border-radius:8px;cursor:pointer;font-size:12px;border:none}
+.topbar .out{margin-left:auto;padding:6px 14px;background:rgba(248,113,113,0.1);color:#f87171;border-radius:8px;cursor:pointer;font-size:12px;border:none;white-space:nowrap}
 .content{padding:20px;max-width:1100px;margin:0 auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{text-align:left;padding:10px 12px;color:#7a7a9a;border-bottom:1px solid rgba(255,255,255,0.06);font-weight:600}
@@ -30,15 +32,39 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
 .btn-g{background:rgba(52,211,153,0.12);color:#34d399}
 .btn-r{background:rgba(248,113,113,0.12);color:#f87171}
 .btn-b{background:rgba(96,165,250,0.12);color:#60a5fa}
-.field{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.field label{width:120px;font-size:13px;color:#7a7a9a}
-.field input{flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px;outline:none}
-.save-bar{margin-top:20px}
-.save-bar button{padding:10px 24px;background:#64ffda;color:#0a0a14;border:none;border-radius:10px;font-weight:600;cursor:pointer}
+.btn-y{background:rgba(251,191,36,0.12);color:#fbbf24}
+.field{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.field label{width:120px;font-size:13px;color:#7a7a9a;flex-shrink:0}
+.field input,.field select,.field textarea{flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px;outline:none;font-family:inherit}
+.field input:focus,.field select:focus{border-color:#64ffda}
+.save-bar{margin-top:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.save-bar button{padding:10px 20px;background:#64ffda;color:#0a0a14;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px}
+.save-bar .test-btn{background:rgba(96,165,250,0.15);color:#60a5fa}
 .stats{display:flex;gap:16px;margin-bottom:20px}
 .stat{flex:1;background:#12121e;border-radius:12px;padding:16px;text-align:center}
 .stat .n{font-size:24px;font-weight:700;color:#64ffda}
 .stat .l{font-size:11px;color:#7a7a9a;margin-top:4px}
+.card{background:#12121e;border-radius:14px;padding:20px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.04)}
+.card h3{font-size:15px;color:#64ffda;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.card h3 .badge{font-size:10px;padding:2px 7px;border-radius:4px;background:rgba(100,255,218,0.1);color:#64ffda;font-weight:400}
+.card .desc{font-size:12px;color:#7a7a9a;margin-bottom:14px;line-height:1.6}
+.hint{font-size:11px;color:#7a7a9a;margin-top:4px;line-height:1.5}
+.key-row{position:relative}
+.key-row .toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:12px;color:#7a7a9a;padding:4px}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.dot-on{background:#34d399;box-shadow:0 0 6px #34d399}
+.dot-off{background:#555}
+.test-result{margin-top:10px;padding:10px;border-radius:8px;font-size:12px;font-family:monospace;word-break:break-all;display:none;max-height:200px;overflow:auto}
+.test-ok{background:rgba(52,211,153,0.08);color:#34d399;border:1px solid rgba(52,211,153,0.2)}
+.test-fail{background:rgba(248,113,113,0.08);color:#f87171;border:1px solid rgba(248,113,113,0.2)}
+.provider-row{background:#1a1a28;border-radius:10px;padding:14px;margin-bottom:10px;border:1px solid rgba(255,255,255,0.04)}
+.provider-row .pr-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.provider-row .pr-head .name{font-weight:600;color:#64ffda;font-size:14px}
+.provider-row .pr-head .actions{display:flex;gap:6px}
+.provider-row .mini-field{display:inline-flex;align-items:center;gap:6px;margin-right:12px;font-size:12px;color:#7a7a9a}
+.provider-row .mini-field input{width:80px;padding:5px 8px;background:#0e0e16;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#e0e0e8;font-size:12px}
+.section-title{font-size:14px;color:#64ffda;margin:20px 0 10px;font-weight:600}
+.add-btn{padding:8px 16px;background:rgba(100,255,218,0.1);color:#64ffda;border:1px solid rgba(100,255,218,0.2);border-radius:8px;cursor:pointer;font-size:13px}
 </style>
 </head>
 <body>
@@ -46,8 +72,8 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
 <div class="login" id="login">
   <h1>◆ MyAI 管理后台</h1>
   <div class="err" id="lerr"></div>
-  <input id="lu" placeholder="用户名" value="admin">
-  <input id="lp" type="password" placeholder="密码" value="admin">
+  <input id="lu" placeholder="用户名" value="admin" autocomplete="username">
+  <input id="lp" type="password" placeholder="密码" autocomplete="current-password">
   <button onclick="doLogin()">登录</button>
 </div>
 
@@ -55,8 +81,13 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
   <div class="topbar">
     <div class="logo">◆ MyAI Admin</div>
     <div class="nav">
-      <span class="active" onclick="tab('users',this)">用户管理</span>
-      <span onclick="tab('brand',this)">品牌配置</span>
+      <span class="active" onclick="tab('users',this)">用户</span>
+      <span onclick="tab('brand',this)">品牌</span>
+      <span onclick="tab('llm',this)">大模型</span>
+      <span onclick="tab('oss',this)">云存储</span>
+      <span onclick="tab('skills',this)">技能市场</span>
+      <span onclick="tab('media',this)">媒体API</span>
+      <span onclick="tab('workflow',this)">工作流</span>
     </div>
     <button class="out" onclick="localStorage.removeItem('t');location.reload()">退出</button>
   </div>
@@ -82,47 +113,270 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
       <div class="field"><label>应用名称(中)</label><input id="b-app_name_cn" placeholder="MyAI"></div>
       <div class="field"><label>App ID</label><input id="b-app_id" placeholder="com.myai.app"></div>
       <div class="field"><label>Agent 名称</label><input id="b-agent_name" placeholder="MyAI"></div>
-      <div class="field"><label>Logo URL</label><input id="b-logo_url" placeholder="https://example.com/logo.png"></div>
+      <div class="field"><label>Logo URL</label><input id="b-logo_url" placeholder="https://..."></div>
       <div class="field"><label>主题色</label><input id="b-primary_color" placeholder="#64ffda"></div>
       <div class="field"><label>标语</label><input id="b-slogan" placeholder="你的个人数字助手"></div>
-      <div class="save-bar"><button onclick="saveBranding()">保存品牌配置</button></div>
-      <p style="font-size:12px;color:#7a7a9a;margin-top:12px">保存后,所有客户端启动时拉取最新品牌配置(名称/Logo/颜色)。</p>
+      <div class="save-bar"><button onclick="saveBranding()">保存</button></div>
+    </div>
+
+    <!-- ═══ 大模型管理 ═══ -->
+    <div id="tab-llm" style="display:none">
+      <div class="card">
+        <h3>🤖 大模型供应商管理 <span class="badge">平台统一计费</span></h3>
+        <div class="desc">
+          配置各供应商 API Key。用户调用 LLM 时后端自动路由,按模型单价从用户 Token 余额扣费(加价转售)。<br>
+          用户不接触真实 Key,只消耗平台 Token。<br>
+          <b>计费公式</b>:扣除平台Token = 输入token×输入单价/1000 + 输出token×输出单价/1000
+        </div>
+        <div id="provider-list"></div>
+        <div style="margin-top:12px"><button class="add-btn" onclick="addProvider()">+ 添加供应商</button></div>
+        <div class="save-bar"><button onclick="saveAllProviders()">保存所有配置</button></div>
+      </div>
+
+      <div class="card">
+        <h3>💰 模型计价表</h3>
+        <div class="desc">每 1000 token 扣除的平台 Token 数。输入/输出可分别定价(输出通常更贵)。</div>
+        <table>
+          <thead><tr><th>供应商</th><th>模型</th><th>输入/1k</th><th>输出/1k</th><th>操作</th></tr></thead>
+          <tbody id="pricing-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ 阿里云 OSS ═══ -->
+    <div id="tab-oss" style="display:none">
+      <div class="card">
+        <h3>☁️ 阿里云 OSS 云存储 <span class="badge" id="oss-badge"><span class="status-dot dot-off"></span>未配置</span></h3>
+        <div class="desc">
+          配置对象存储,支持:<br>
+          • 用户文件备份(文档/对话记录/记忆) — 换电脑不丢数据<br>
+          • 公共技能市场存储(管理员上传,所有用户可用)<br>
+          • 媒体文件存储(生成的图片/视频/音乐)<br>
+          • 用户头像/配置
+        </div>
+        <div class="field"><label>Region</label><input id="oss-region" placeholder="oss-cn-hangzhou"></div>
+        <div class="field"><label>Bucket</label><input id="oss-bucket" placeholder="myai-storage"></div>
+        <div class="field"><label>Endpoint</label><input id="oss-endpoint" placeholder="oss-cn-hangzhou.aliyuncs.com"></div>
+        <div class="field key-row">
+          <label>AccessKey ID</label>
+          <input id="oss-access_key_id" type="password" placeholder="阿里云 RAM AK ★">
+          <span class="toggle" onclick="togKey('oss-access_key_id',this)">显示</span>
+        </div>
+        <div class="field key-row">
+          <label>AccessKey Secret</label>
+          <input id="oss-access_key_secret" type="password" placeholder="阿里云 RAM AS ★">
+          <span class="toggle" onclick="togKey('oss-access_key_secret',this)">显示</span>
+        </div>
+        <div class="field"><label>CDN 域名</label><input id="oss-cdn_domain" placeholder="https://cdn.example.com (可选)"></div>
+        <div class="field">
+          <label>Bucket 读权限</label>
+          <select id="oss-public_read">
+            <option value="0">私有(签名访问)</option>
+            <option value="1">公共读(直链访问)</option>
+          </select>
+        </div>
+        <div class="hint">★ 建议创建专用 RAM 子账号,只授予该 Bucket 的读写权限。</div>
+        <div class="save-bar"><button onclick="saveOss()">保存 OSS 配置</button></div>
+      </div>
+    </div>
+
+    <!-- ═══ 技能市场 ═══ -->
+    <div id="tab-skills" style="display:none">
+      <div class="card">
+        <h3>🎯 技能市场管理</h3>
+        <div class="desc">添加/管理公共技能。用户在桌面端按 S 键或手机端「技能」标签可浏览并直接使用。</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+          <button class="add-btn" onclick="showSkillForm()">+ 手动添加</button>
+          <button class="add-btn" onclick="showImportUrl()" style="background:rgba(96,165,250,0.1);color:#60a5fa;border-color:rgba(96,165,250,0.2)">🔗 导入链接</button>
+          <button class="add-btn" onclick="document.getElementById('sk-file-input').click()" style="background:rgba(124,111,240,0.1);color:#7c6ff0;border-color:rgba(124,111,240,0.2)">📎 上传文件</button>
+          <input type="file" id="sk-file-input" style="display:none" accept=".json,.md,.txt,.skill,.yaml,.yml,.zip,.tar,.tar.gz,.tgz,.csv,.html,.htm,.xml,.js,.ts,.py,.sh,.bat,.ps1,.toml,.ini,.conf,.log,.rst,.org" onchange="importSkillFile(event)">
+          <select id="sk-filter-cat" onchange="renderSkillTable()" style="padding:6px 10px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px">
+            <option value="">全部分类</option>
+            <option value="编程">💻 编程</option>
+            <option value="办公">💼 办公</option>
+            <option value="学习">📚 学习</option>
+            <option value="创意">🎨 创意</option>
+            <option value="生活">🌱 生活</option>
+            <option value="通用">🔧 通用</option>
+          </select>
+          <span style="font-size:12px;color:#7a7a9a" id="skill-count">-</span>
+        </div>
+
+        <!-- 导入链接表单 -->
+        <div id="import-url-form" style="display:none;background:#0e0e1e;border:1px solid rgba(96,165,250,0.12);border-radius:14px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;color:#60a5fa;margin-bottom:14px">🔗 从链接导入技能</h4>
+          <div class="field"><label>技能文件 URL</label><input id="sk-import-url" placeholder="https://example.com/my-skill.json 或 .md 或网页链接"></div>
+          <div class="hint" style="margin-bottom:12px">支持 JSON 技能文件、Markdown、YAML front-matter、网页内容。自动解析标题、简介和内容。</div>
+          <div class="save-bar">
+            <button onclick="doImportUrl()" style="background:#60a5fa">解析并导入</button>
+            <button class="test-btn" onclick="document.getElementById('import-url-form').style.display='none'">取消</button>
+          </div>
+          <div id="import-url-status" style="margin-top:10px;font-size:12px;display:none"></div>
+        </div>
+
+        <!-- 技能表单(添加/编辑) -->
+        <div id="skill-form" style="display:none;background:#0e0e1e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;color:#64ffda;margin-bottom:14px" id="sk-form-title">添加技能</h4>
+          <input type="hidden" id="sk-id">
+          <div class="field"><label>技能名称</label><input id="sk-title" placeholder="如：仓颉查字助手"></div>
+          <div class="field"><label>分类</label>
+            <select id="sk-category" style="flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px">
+              <option value="通用">通用</option><option value="办公">办公</option><option value="编程">编程</option>
+              <option value="创意">创意</option><option value="生活">生活</option><option value="学习">学习</option>
+            </select>
+          </div>
+          <div class="field"><label>简介</label><input id="sk-description" placeholder="一句话描述技能用途"></div>
+          <div class="field"><label>图标(emoji 或 URL)</label><input id="sk-icon_url" placeholder="如 🔤 或 https://example.com/icon.png"></div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:13px;color:#7a7a9a;margin-bottom:6px">技能内容(AI 提示词)</label>
+            <textarea id="sk-content" rows="8" style="width:100%;padding:12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px;font-family:monospace;outline:none;line-height:1.5;resize:vertical" placeholder="用户点击技能后发送给 AI 的完整提示词。例如：&#10;请作为仓颉输入法专家，帮我查询以下汉字的仓颉编码。给出每个字的仓颉码和拆字说明。&#10;&#10;查询汉字：[用户在此输入]"></textarea>
+          </div>
+          <div class="field"><label>作者</label><input id="sk-author" placeholder="官方 / 你的名字" value="官方"></div>
+          <div class="save-bar">
+            <button onclick="saveSkill()">保存技能</button>
+            <button class="test-btn" onclick="hideSkillForm()">取消</button>
+          </div>
+        </div>
+
+        <!-- 技能列表 -->
+        <table>
+          <thead><tr><th>ID</th><th>图标</th><th>名称</th><th>分类</th><th>下载</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="skill-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ 工作流系统 ═══ -->
+    <div id="tab-workflow" style="display:none">
+      <div class="card">
+        <h3>⚡ 工作流 (ActionSpec)</h3>
+        <div class="desc">可持久化、可定时、失败自动重试的动作序列。桌面端在线时自动领取执行。<br>
+        支持动作: <code>message</code>(AI对话) <code>generate_image</code>(生成图) <code>web_search</code> <code>notify</code>(通知) <code>api_call</code> <code>delay</code> <code>exec_command</code>(白名单) <code>sequence</code>(组合)</div>
+        <div style="display:flex;gap:10px;margin-bottom:14px">
+          <button class="add-btn" onclick="showWfForm()">+ 新建工作流</button>
+          <button class="add-btn" onclick="showCronForm()" style="background:rgba(96,165,250,0.1);color:#60a5fa;border-color:rgba(96,165,250,0.2)">⏰ 新建定时任务</button>
+        </div>
+
+        <!-- 工作流表单 -->
+        <div id="wf-form" style="display:none;background:#0e0e1e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;color:#64ffda;margin-bottom:14px">新建工作流</h4>
+          <input type="hidden" id="wf-id">
+          <div class="field"><label>名称</label><input id="wf-name" placeholder="如:每日早报生成"></div>
+          <div class="field"><label>描述</label><input id="wf-desc" placeholder="可选"></div>
+          <div style="margin-bottom:12px">
+            <label style="display:block;font-size:13px;color:#7a7a9a;margin-bottom:6px">ActionSpec (JSON)</label>
+            <textarea id="wf-spec" rows="6" style="width:100%;padding:12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:12px;font-family:monospace;outline:none;resize:vertical" placeholder='{"type":"sequence","steps":[{"type":"web_search","query":"AI行业今日新闻"},{"type":"message","content":"根据以上搜索结果,写一份今日AI早报,3条要点"}]}'></textarea>
+          </div>
+          <div class="save-bar">
+            <button onclick="saveWorkflow()">保存</button>
+            <button class="test-btn" onclick="document.getElementById('wf-form').style.display='none'">取消</button>
+          </div>
+        </div>
+
+        <table>
+          <thead><tr><th>ID</th><th>名称</th><th>动作数</th><th>执行次数</th><th>最后执行</th><th>操作</th></tr></thead>
+          <tbody id="wf-list"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>⏰ 定时任务 (Cron)</h3>
+        <div class="desc">cron 表达式 5 段: 分 时 日 月 周 (Asia/Shanghai)。到点自动入队,桌面端执行。例: <code>0 9 * * *</code> 每天9点 / <code>*/30 * * * *</code> 每30分钟</div>
+        <div id="cron-form" style="display:none;background:#0e0e1e;border:1px solid rgba(96,165,250,0.12);border-radius:14px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;color:#60a5fa;margin-bottom:14px">新建定时任务</h4>
+          <div class="field"><label>名称</label><input id="cron-name" placeholder="如:每日AI早报"></div>
+          <div class="field"><label>cron 表达式</label><input id="cron-expr" placeholder="0 9 * * * (每天 9:00)"></div>
+          <div class="field"><label>关联工作流</label>
+            <select id="cron-workflow" style="flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px"></select>
+          </div>
+          <div class="save-bar">
+            <button onclick="saveCron()" style="background:#60a5fa">保存定时任务</button>
+            <button class="test-btn" onclick="document.getElementById('cron-form').style.display='none'">取消</button>
+          </div>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>名称</th><th>cron</th><th>下次执行</th><th>已执行</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="cron-list"></tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>📋 任务队列</h3>
+        <div class="desc">持久化队列,支持优先级/重试/超时。桌面端在线时自动执行。</div>
+        <div class="stats" id="task-stats" style="margin-bottom:14px"></div>
+        <table>
+          <thead><tr><th>ID</th><th>状态</th><th>尝试</th><th>创建时间</th><th>完成时间</th><th>结果/错误</th></tr></thead>
+          <tbody id="task-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ═══ 媒体 API(多米)═══ -->
+    <div id="tab-media" style="display:none">
+      <div class="card">
+        <h3>🎬 媒体 API(多米) <span class="badge" id="media-badge"><span class="status-dot dot-off"></span>未配置</span></h3>
+        <div class="desc">图片/视频/音乐生成的统一接口。客户端图片生成可走此后端。</div>
+        <div class="field"><label>Base URL</label><input id="media-base_url" placeholder="https://duomiapi.com"></div>
+        <div class="field key-row">
+          <label>API Key</label>
+          <input id="media-api_key" type="password" placeholder="多米 API Key ★">
+          <span class="toggle" onclick="togKey('media-api_key',this)">显示</span>
+        </div>
+        <div class="section-title">图片</div>
+        <div class="field"><label>图片端点</label><input id="media-image_endpoint" placeholder="/v1/images/generations"></div>
+        <div class="field"><label>图片模型</label><input id="media-image_model" placeholder="gpt-image-2"></div>
+        <div class="field"><label>异步模式</label><select id="media-image_async"><option value="1">开启</option><option value="0">关闭</option></select></div>
+        <div class="section-title">视频</div>
+        <div class="field"><label>视频端点</label><input id="media-video_endpoint" placeholder="/api/video/runway/pro/generate"></div>
+        <div class="field"><label>视频模型</label><input id="media-video_model" placeholder="runway-gen3"></div>
+        <div class="section-title">音乐</div>
+        <div class="field"><label>音乐端点</label><input id="media-music_endpoint" placeholder="/api/suno/music/generate"></div>
+        <div class="field"><label>音乐模型</label><input id="media-music_model" placeholder="suno-v4"></div>
+        <div class="save-bar">
+          <button onclick="saveMedia()">保存</button>
+          <button class="test-btn" onclick="testMedia()">测试连通</button>
+        </div>
+        <div class="test-result" id="media-test"></div>
+      </div>
     </div>
 
   </div>
 </div>
 
 <script>
-const API = window.location.pathname.startsWith('/admin') ? '/admin' : ''
+const API = location.pathname.startsWith('/admin') ? '/admin' : ''
 let token = localStorage.getItem('t')
-
 if (token) showDash()
 
 async function doLogin() {
-  const u = document.getElementById('lu').value
+  const u = document.getElementById('lu').value.trim()
   const p = document.getElementById('lp').value
-  const r = await fetch(API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
-  const d = await r.json()
-  if (!r.ok) { document.getElementById('lerr').textContent = d.error; return }
-  token = d.token
-  localStorage.setItem('t', token)
-  showDash()
+  document.getElementById('lerr').textContent = ''
+  try {
+    const r = await fetch(API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
+    const d = await r.json()
+    if (!r.ok) { document.getElementById('lerr').textContent = d.error || '登录失败'; return }
+    token = d.token; localStorage.setItem('t', token); showDash()
+  } catch (e) { document.getElementById('lerr').textContent = '无法连接: ' + e.message }
 }
-
 async function showDash() {
   document.getElementById('login').style.display = 'none'
   document.getElementById('dash').style.display = 'block'
-  loadUsers()
-  loadBranding()
+  loadUsers(); loadBranding(); loadProviders(); loadOss(); loadSkills(); loadMedia()
 }
-
 function tab(id, el) {
-  document.querySelectorAll('.nav span').forEach(s => s.classList.remove('active'))
+  document.querySelectorAll('.topbar .nav span').forEach(s => s.classList.remove('active'))
   el.classList.add('active')
-  document.getElementById('tab-users').style.display = id === 'users' ? '' : 'none'
-  document.getElementById('tab-brand').style.display = id === 'brand' ? '' : 'none'
+  ;['users','brand','llm','oss','skills','workflow','media'].forEach(t => document.getElementById('tab-'+t).style.display = t === id ? '' : 'none')
+  if (id === 'workflow') loadWorkflowTab()
 }
+function togKey(id, el) {
+  const inp = document.getElementById(id)
+  if (inp.type === 'password') { inp.type = 'text'; el.textContent = '隐藏' } else { inp.type = 'password'; el.textContent = '显示' }
+}
+function authHeaders() { return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token } }
 
+// ── 用户 ──
 async function loadUsers() {
   const r = await fetch(API + '/api/users', { headers: { Authorization: 'Bearer ' + token } })
   if (r.status === 401) { localStorage.removeItem('t'); location.reload(); return }
@@ -136,50 +390,477 @@ async function loadUsers() {
     <td><span class="tag tag-${u.status}">${u.status}</span></td>
     <td>${u.token_quota||0}</td><td>${u.token_used||0}</td>
     <td>${(u.created_at||'').slice(0,10)}</td>
-    <td>
-      <button class="btn btn-g" onclick="recharge(${u.id})">充值</button>
-      <button class="btn ${u.status==='active'?'btn-r':'btn-g'}" onclick="toggleStatus(${u.id},'${u.status}')">${u.status==='active'?'停用':'开通'}</button>
-    </td>
+    <td><button class="btn btn-g" onclick="recharge(${u.id})">充值</button>
+    <button class="btn ${u.status==='active'?'btn-r':'btn-g'}" onclick="toggleStatus(${u.id},'${u.status}')">${u.status==='active'?'停用':'开通'}</button></td>
   </tr>`).join('')
 }
-
 async function loadBranding() {
-  const r = await fetch(API + '/api/branding')
-  const b = await r.json()
-  for (const [k, v] of Object.entries(b)) {
-    const el = document.getElementById('b-' + k)
-    if (el) el.value = v
-  }
+  const b = await (await fetch(API + '/api/branding')).json()
+  for (const [k,v] of Object.entries(b)) { const el = document.getElementById('b-'+k); if (el) el.value = v }
+}
+async function saveBranding() {
+  const up = {}; document.querySelectorAll('[id^="b-"]').forEach(el => up[el.id.slice(2)] = el.value)
+  const r = await fetch(API + '/api/branding/config', { method:'POST', headers: authHeaders(), body: JSON.stringify(up) })
+  alert(r.ok ? '已保存' : '失败')
+}
+async function recharge(id) {
+  const a = prompt('充值 Token 数:'); if (!a) return
+  await fetch(API + `/api/users/${id}/recharge`, { method:'POST', headers: authHeaders(), body: JSON.stringify({ amount: parseInt(a) }) }); loadUsers()
+}
+async function toggleStatus(id, cur) {
+  await fetch(API + `/api/users/${id}/status`, { method:'POST', headers: authHeaders(), body: JSON.stringify({ status: cur==='active'?'suspended':'active' }) }); loadUsers()
 }
 
-async function saveBranding() {
-  const updates = {}
-  document.querySelectorAll('[id^="b-"]').forEach(el => { updates[el.id.slice(2)] = el.value })
-  const r = await fetch(API + '/api/branding/config', {
-    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-    body:JSON.stringify(updates)
+// ── 大模型供应商 ──
+let providersData = [], pricingData = []
+async function loadProviders() {
+  const r = await fetch(API + '/api/admin/providers', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  providersData = d.providers || []; pricingData = d.pricing || []
+  renderProviders(); renderPricing()
+}
+function renderProviders() {
+  document.getElementById('provider-list').innerHTML = providersData.map((p, i) => `
+    <div class="provider-row">
+      <div class="pr-head">
+        <span class="name">${p.label || p.name} <span style="font-size:11px;color:#7a7a9a">(${p.name})</span></span>
+        <div class="actions">
+          <button class="btn btn-g" onclick="togProvider(${i})">${p.enabled ? '已启用' : '已禁用'}</button>
+          <button class="btn btn-r" onclick="delProvider(${i})">删除</button>
+        </div>
+      </div>
+      <div class="field"><label>显示名</label><input value="${p.label||''}" onchange="providersData[${i}].label=this.value"></div>
+      <div class="field"><label>Base URL</label><input value="${p.base_url||''}" onchange="providersData[${i}].base_url=this.value"></div>
+      <div class="field key-row"><label>API Key</label><input type="password" value="${p.api_key||''}" placeholder="填写 ${p.name} 的 Key" onchange="providersData[${i}].api_key=this.value"><span class="toggle" onclick="this.previousElementSibling.type=this.previousElementSibling.type==='password'?'text':'password';this.textContent=this.previousElementSibling.type==='password'?'显示':'隐藏'">显示</span></div>
+      <div class="field"><label>Chat 端点</label><input value="${p.chat_endpoint||'/v1/chat/completions'}" onchange="providersData[${i}].chat_endpoint=this.value"></div>
+      <div class="field"><label>模型列表</label><input value="${p.models||''}" placeholder="逗号分隔" onchange="providersData[${i}].models=this.value"></div>
+      <div class="hint">供应商标识: <code>${p.name}</code> | ID: ${p.id || '新'}</div>
+    </div>`).join('')
+}
+function renderPricing() {
+  document.getElementById('pricing-list').innerHTML = pricingData.map((p, i) => `<tr>
+    <td>${p.provider}</td><td>${p.model}</td>
+    <td><input style="width:70px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#e0e0e8;padding:4px" value="${p.price_input}" onchange="updatePrice(${i},'in',this.value)"></td>
+    <td><input style="width:70px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:6px;color:#e0e0e8;padding:4px" value="${p.price_output}" onchange="updatePrice(${i},'out',this.value)"></td>
+    <td><button class="btn btn-b" onclick="savePrice(${i})">保存</button></td>
+  </tr>`).join('')
+}
+function updatePrice(i, type, val) {
+  if (type === 'in') pricingData[i].price_input = parseFloat(val)
+  else pricingData[i].price_output = parseFloat(val)
+}
+async function savePrice(i) {
+  const p = pricingData[i]
+  await fetch(API + '/api/admin/pricing', { method:'POST', headers: authHeaders(), body: JSON.stringify(p) })
+  alert('计价已保存')
+}
+function addProvider() {
+  providersData.push({ name: 'custom' + Date.now(), label: '新供应商', base_url: '', api_key: '', chat_endpoint: '/v1/chat/completions', models: '', enabled: 1, sort_order: providersData.length + 1 })
+  renderProviders()
+}
+function togProvider(i) { providersData[i].enabled = providersData[i].enabled ? 0 : 1; renderProviders() }
+function delProvider(i) { if (confirm('删除该供应商?')) { providersData.splice(i, 1); renderProviders() } }
+async function saveAllProviders() {
+  for (const p of providersData) {
+    await fetch(API + '/api/admin/providers', { method:'POST', headers: authHeaders(), body: JSON.stringify(p) })
+  }
+  alert('所有供应商配置已保存'); loadProviders()
+}
+
+// ── OSS ──
+async function loadOss() {
+  const r = await fetch(API + '/api/admin/oss', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const c = await r.json()
+  for (const [k,v] of Object.entries(c)) { const el = document.getElementById('oss-'+k); if (el) el.value = v }
+  const on = c.access_key_id && c.bucket
+  document.getElementById('oss-badge').innerHTML = '<span class="status-dot ' + (on?'dot-on':'dot-off') + '"></span>' + (on?'已配置':'未配置')
+}
+async function saveOss() {
+  const up = {}; document.querySelectorAll('[id^="oss-"]').forEach(el => { if (el.id !== 'oss-badge') up[el.id.slice(4)] = el.value })
+  const r = await fetch(API + '/api/admin/oss', { method:'POST', headers: authHeaders(), body: JSON.stringify(up) })
+  alert(r.ok ? 'OSS 配置已保存' : '失败'); loadOss()
+}
+
+// ── 技能 ──
+let allSkills = []
+async function loadSkills() {
+  const r = await fetch(API + '/api/admin/skills', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  allSkills = d.skills || []
+  renderSkillTable()
+}
+function renderSkillTable() {
+  const filter = document.getElementById('sk-filter-cat')?.value || ''
+  let skills = filter ? allSkills.filter(s => s.category === filter) : allSkills
+
+  // 按 category → skill_group 二级分组(和手机端一致)
+  const catIcons = {'编程':'💻','办公':'💼','学习':'📚','创意':'🎨','生活':'🌱','学习':'📚','通用':'🔧'}
+  const catOrder = ['编程','办公','学习','创意','生活','通用']
+  const byCat = {}
+  for (const s of skills) {
+    const cat = filter || s.category || '通用'
+    if (!byCat[cat]) byCat[cat] = { groups: {}, standalone: [] }
+    if (s.skill_group) {
+      if (!byCat[cat].groups[s.skill_group]) byCat[cat].groups[s.skill_group] = []
+      byCat[cat].groups[s.skill_group].push(s)
+    } else {
+      byCat[cat].standalone.push(s)
+    }
+  }
+
+  let totalEnabled = skills.filter(s => s.enabled).length
+  let totalGroups = 0
+  for (const c of Object.values(byCat)) totalGroups += Object.keys(c.groups).length
+  document.getElementById('skill-count').textContent = skills.length + ' 个(' + totalEnabled + ' 上架 · ' + totalGroups + ' 组)'
+
+  let html = ''
+  const cats = filter ? [filter] : catOrder
+  let catIdx = 0
+  for (const cat of cats) {
+    const catData = byCat[cat]
+    if (!catData) continue
+    let total = catData.standalone.length
+    const gnames = Object.keys(catData.groups)
+    gnames.forEach(g => total += catData.groups[g].length)
+    if (total === 0) continue
+
+    // 分类标题(可折叠,默认展开)
+    const catId = 'admcat_' + catIdx
+    html += `<tr><td colspan="7" onclick="toggleAdmCat('${catId}',this)" style="cursor:pointer;padding:10px 14px;background:linear-gradient(135deg,rgba(0,229,255,0.06),rgba(124,77,255,0.04));border:1px solid rgba(0,229,255,0.1);border-radius:10px">
+      <span style="font-size:16px">${catIcons[cat]||'🔧'}</span>
+      <b style="color:#64ffda;font-size:14px;margin-left:6px">${cat}</b>
+      <span style="background:rgba(100,255,218,0.1);color:#64ffda;font-size:11px;padding:2px 8px;border-radius:10px;margin-left:8px">${total}个${gnames.length>0?' · '+gnames.length+'组':''}</span>
+      <span class="adm-cat-arrow" style="float:right;color:#7a7a9a;font-size:12px">▼</span>
+    </td></tr>`
+
+    html += `<tbody id="${catId}" style="display:block">`
+    // 技能组(默认折叠)
+    for (const [gn, gs] of Object.entries(catData.groups)) {
+      html += `<tr style="background:rgba(124,111,240,0.04)"><td colspan="7" onclick="toggleSkillGroup('admg_${catIdx}_${gn}')" style="cursor:pointer;padding:8px 14px">
+        <b style="color:#7c6ff0;font-size:13px">📦 ${gn}</b>
+        <span style="color:#7a7a9a;font-size:11px;margin-left:8px">${gs.length} 个</span>
+        <span id="admg_${catIdx}_${gn}_arrow" style="float:right;color:#7a7a9a;font-size:11px">▶</span>
+      </td></tr>`
+      html += `<tbody id="admg_${catIdx}_${gn}" style="display:none">`
+      for (const s of gs) html += renderSkillRow(s)
+      html += '</tbody>'
+    }
+    // 独立技能
+    for (const s of catData.standalone) html += renderSkillRow(s)
+    html += '</tbody>'
+    catIdx++
+  }
+  document.getElementById('skill-list').innerHTML = html
+}
+
+function toggleAdmCat(id, headerEl) {
+  const body = document.getElementById(id)
+  const arrow = headerEl.querySelector('.adm-cat-arrow')
+  if (!body) return
+  const shown = body.style.display !== 'none'
+  body.style.display = shown ? 'none' : 'block'
+  if (arrow) arrow.textContent = shown ? '▶' : '▼'
+}
+
+function renderSkillRow(s) {
+  return `<tr>
+    <td>${s.id}</td>
+    <td style="font-size:16px;text-align:center">${s.icon_url ? (s.icon_url.startsWith('http') ? '<img src="'+s.icon_url+'" style="width:18px;height:18px;border-radius:3px">' : s.icon_url) : '🎯'}</td>
+    <td><b>${s.title||''}</b><br><small style="color:#7a7a9a">${(s.description||'').slice(0,40)}</small></td>
+    <td>${s.category||'通用'}</td>
+    <td>${s.downloads||0}</td>
+    <td><span class="tag tag-${s.enabled?'active':'suspended'}">${s.enabled?'上架':'下架'}</span></td>
+    <td>
+      <button class="btn btn-b" onclick='editSkill(${JSON.stringify(s).replace(/'/g,"&#39;")})'>编辑</button>
+      <button class="btn btn-y" onclick="togSkill(${s.id},${s.enabled})">${s.enabled?'下架':'上架'}</button>
+      <button class="btn btn-r" onclick="delSkill(${s.id})">删除</button>
+    </td>
+  </tr>`
+}
+
+function toggleSkillGroup(name) {
+  const body = document.getElementById('skill-group-' + name)
+  const arrow = document.getElementById('skill-group-' + name + '-arrow')
+  if (!body) return
+  const hidden = body.style.display === 'none'
+  body.style.display = hidden ? '' : 'none'
+  if (arrow) arrow.textContent = hidden ? '▼' : '▶'
+}
+function showSkillForm() {
+  document.getElementById('sk-form-title').textContent = '添加技能'
+  document.getElementById('sk-id').value = ''
+  document.getElementById('sk-title').value = ''
+  document.getElementById('sk-category').value = '通用'
+  document.getElementById('sk-description').value = ''
+  document.getElementById('sk-icon_url').value = ''
+  document.getElementById('sk-content').value = ''
+  document.getElementById('sk-author').value = '官方'
+  document.getElementById('skill-form').style.display = ''
+}
+function hideSkillForm() { document.getElementById('skill-form').style.display = 'none' }
+function editSkill(s) {
+  document.getElementById('sk-form-title').textContent = '编辑技能 #' + s.id
+  document.getElementById('sk-id').value = s.id
+  document.getElementById('sk-title').value = s.title || ''
+  document.getElementById('sk-category').value = s.category || '通用'
+  document.getElementById('sk-description').value = s.description || ''
+  document.getElementById('sk-icon_url').value = s.icon_url || ''
+  document.getElementById('sk-content').value = s.content || ''
+  document.getElementById('sk-author').value = s.author || '官方'
+  document.getElementById('skill-form').style.display = ''
+  window.scrollTo(0, 0)
+}
+async function saveSkill() {
+  const id = document.getElementById('sk-id').value
+  const b = {
+    title: document.getElementById('sk-title').value.trim(),
+    category: document.getElementById('sk-category').value,
+    description: document.getElementById('sk-description').value.trim(),
+    icon_url: document.getElementById('sk-icon_url').value.trim(),
+    content: document.getElementById('sk-content').value,
+    author: document.getElementById('sk-author').value.trim() || '官方'
+  }
+  if (!b.title || !b.content) { alert('技能名称和内容必填'); return }
+  if (id) b.id = parseInt(id)
+  await fetch(API + '/api/admin/skills', { method:'POST', headers: authHeaders(), body: JSON.stringify(b) })
+  hideSkillForm(); loadSkills()
+}
+async function togSkill(id, en) { await fetch(API + '/api/admin/skills', { method:'POST', headers: authHeaders(), body: JSON.stringify({ id, enabled: en?0:1 }) }); loadSkills() }
+async function delSkill(id) { if(confirm('确定删除这个技能?')) { await fetch(API + `/api/admin/skills/${id}`, { method:'DELETE', headers: { Authorization: 'Bearer ' + token } }); loadSkills() } }
+
+// ── 技能导入 ──
+function showImportUrl() { document.getElementById('import-url-form').style.display = ''; document.getElementById('sk-import-url').focus() }
+
+async function doImportUrl() {
+  const url = document.getElementById('sk-import-url').value.trim()
+  if (!url) return
+  const status = document.getElementById('import-url-status')
+  status.style.display = ''; status.style.color = '#7a7a9a'; status.textContent = '正在解析链接…'
+  try {
+    const r = await fetch(API + '/api/admin/skills/import-url', { method:'POST', headers: authHeaders(), body: JSON.stringify({ url }) })
+    const d = await r.json()
+    if (!r.ok) { status.style.color = '#f87171'; status.textContent = '✗ ' + (d.error || '解析失败'); return }
+    status.style.color = '#34d399'; status.textContent = '✓ 解析成功！请在下方确认内容后保存。'
+    // 填充到技能表单
+    showSkillForm()
+    document.getElementById('sk-form-title').textContent = '导入的技能(确认后保存)'
+    if (d.skill.title) document.getElementById('sk-title').value = d.skill.title
+    if (d.skill.description) document.getElementById('sk-description').value = d.skill.description
+    if (d.skill.content) document.getElementById('sk-content').value = d.skill.content
+    if (d.skill.category) document.getElementById('sk-category').value = d.skill.category
+    if (d.skill.icon_url) document.getElementById('sk-icon_url').value = d.skill.icon_url
+    document.getElementById('import-url-form').style.display = 'none'
+    window.scrollTo(0, 0)
+  } catch (e) { status.style.color = '#f87171'; status.textContent = '✗ ' + e.message }
+}
+
+async function importSkillFile(event) {
+  const file = event.target.files[0]
+  if (!file) return
+  event.target.value = ''  // reset
+  if (file.size > 10485760) { alert('文件过大(>10MB)，请选择更小的文件'); return }
+  const isArchive = /\.(zip|tar|tar\.gz|tgz)$/i.test(file.name)
+  try {
+    let body
+    if (isArchive) {
+      // 压缩包用 base64 传输(分块转换避免爆栈)
+      const buf = await file.arrayBuffer()
+      const bytes = new Uint8Array(buf)
+      let binary = ''
+      const chunk = 8192
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk))
+      }
+      const b64 = btoa(binary)
+      body = { filename: file.name, base64: b64 }
+    } else {
+      // 文本文件直接读
+      const text = await file.text()
+      body = { filename: file.name, content: text }
+    }
+    const r = await fetch(API + '/api/admin/skills/import-file', { method:'POST', headers: { ...authHeaders() }, body: JSON.stringify(body) })
+    const d = await r.json()
+    if (!r.ok) { alert('解析失败: ' + (d.error || '')); return }
+    if (d.skills && d.skills.length > 1) {
+      // 压缩包解出多个技能
+      alert('从压缩包解析出 ' + d.skills.length + ' 个技能，已自动导入！')
+      loadSkills()
+      return
+    }
+    const skill = d.skill || (d.skills && d.skills[0])
+    if (!skill) { alert('未解析出技能内容'); return }
+    // 填充到技能表单
+    showSkillForm()
+    document.getElementById('sk-form-title').textContent = '导入的技能(确认后保存)'
+    if (skill.title) document.getElementById('sk-title').value = skill.title
+    if (skill.description) document.getElementById('sk-description').value = skill.description
+    if (skill.content) document.getElementById('sk-content').value = skill.content
+    if (skill.category) document.getElementById('sk-category').value = skill.category
+    if (skill.icon_url) document.getElementById('sk-icon_url').value = skill.icon_url
+    window.scrollTo(0, 0)
+  } catch (e) { alert('上传失败: ' + e.message) }
+}
+
+// ── 媒体 ──
+async function loadMedia() {
+  const r = await fetch(API + '/api/admin/media', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const c = await r.json()
+  for (const [k,v] of Object.entries(c)) { const el = document.getElementById('media-'+k); if (el) el.value = v }
+  document.getElementById('media-badge').innerHTML = '<span class="status-dot ' + (c.api_key?'dot-on':'dot-off') + '"></span>' + (c.api_key?'已配置':'未配置')
+}
+async function saveMedia() {
+  const up = {}; document.querySelectorAll('[id^="media-"]').forEach(el => { if (el.id !== 'media-badge' && el.id !== 'media-test') up[el.id.slice(6)] = el.value })
+  const r = await fetch(API + '/api/admin/media', { method:'POST', headers: authHeaders(), body: JSON.stringify(up) })
+  alert(r.ok ? '已保存' : '失败'); loadMedia()
+}
+async function testMedia() {
+  const box = document.getElementById('media-test')
+  box.style.display = 'block'; box.className = 'test-result'; box.textContent = '测试中...'
+  const base_url = document.getElementById('media-base_url').value
+  const api_key = document.getElementById('media-api_key').value
+  const r = await fetch(API + '/api/admin/test', { method:'POST', headers: authHeaders(), body: JSON.stringify({ base_url, api_key, endpoint: '/v1/models' }) })
+  const d = await r.json()
+  box.className = 'test-result ' + (d.ok ? 'test-ok' : 'test-fail')
+  box.textContent = (d.ok ? '✓ 连通成功' : '✗ 失败') + ' (' + d.status + ')\n' + d.sample
+}
+
+// ═══ 工作流系统 ═══
+let wfData = [], cronData = []
+async function loadWorkflowTab() {
+  await Promise.all([loadWorkflows(), loadCrons(), loadTasks()])
+}
+async function loadWorkflows() {
+  const r = await fetch(API + '/api/workflows', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  wfData = d.workflows || []
+  document.getElementById('wf-list').innerHTML = wfData.map(w => {
+    const steps = w.spec && w.spec.steps ? w.spec.steps.length : 1
+    return `<tr>
+      <td>${w.id}</td>
+      <td><b>${esc2(w.name)}</b><br><small style="color:#7a7a9a">${esc2((w.description||'').slice(0,40))}</small></td>
+      <td>${steps}</td>
+      <td>${w.runs_count||0}</td>
+      <td>${(w.last_run_at||'').slice(0,16)}</td>
+      <td>
+        <button class="btn btn-g" onclick="runWorkflow(${w.id})">▶ 执行</button>
+        <button class="btn btn-b" onclick="editWorkflow(${w.id})">编辑</button>
+        <button class="btn btn-r" onclick="delWorkflow(${w.id})">删除</button>
+      </td>
+    </tr>`
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:#7a7a9a">暂无工作流</td></tr>'
+}
+async function loadCrons() {
+  const r = await fetch(API + '/api/cron-jobs', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  cronData = d.jobs || []
+  document.getElementById('cron-list').innerHTML = cronData.map(j => `<tr>
+    <td>${j.id}</td>
+    <td><b>${esc2(j.name)}</b><br><small style="color:#7a7a9a">${esc2(j.workflow_name || '直接动作')}</small></td>
+    <td><code>${esc2(j.cron_expr)}</code></td>
+    <td>${(j.next_run_at||'').slice(0,16)}</td>
+    <td>${j.run_count||0}</td>
+    <td><span class="tag tag-${j.enabled?'active':'suspended'}">${j.enabled?'启用':'停用'}</span></td>
+    <td>
+      <button class="btn btn-y" onclick="togCron(${j.id},${j.enabled})">${j.enabled?'停用':'启用'}</button>
+      <button class="btn btn-r" onclick="delCron(${j.id})">删除</button>
+    </td>
+  </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:#7a7a9a">暂无定时任务</td></tr>'
+}
+async function loadTasks() {
+  const r = await fetch(API + '/api/tasks?limit=30', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  const tasks = d.tasks || []
+  // 统计
+  const stats = {}
+  tasks.forEach(t => stats[t.status] = (stats[t.status]||0)+1)
+  document.getElementById('task-stats').innerHTML = ['pending','running','done','failed'].map(s =>
+    `<div class="stat"><div class="n" style="font-size:18px">${stats[s]||0}</div><div class="l">${s==='pending'?'等待':s==='running'?'执行中':s==='done'?'完成':'失败'}</div></div>`
+  ).join('')
+  document.getElementById('task-list').innerHTML = tasks.map(t => `<tr>
+    <td>${t.id}</td>
+    <td><span class="tag tag-${t.status==='done'?'active':t.status==='failed'?'suspended':''}">${t.status}</span></td>
+    <td>${t.attempts}</td>
+    <td>${(t.created_at||'').slice(5,16)}</td>
+    <td>${(t.finished_at||'').slice(5,16)}</td>
+    <td><small style="color:${t.status==='failed'?'#f87171':'#7a7a9a'}">${esc2(((t.error || t.result_preview) || '').slice(0,60))}</small></td>
+  </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#7a7a9a">暂无任务</td></tr>'
+}
+function esc2(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function showWfForm() {
+  document.getElementById('wf-form').style.display=''
+  document.getElementById('wf-id').value=''
+  document.getElementById('wf-name').value=''
+  document.getElementById('wf-desc').value=''
+  document.getElementById('wf-spec').value=''
+}
+function editWorkflow(id) {
+  const w = wfData.find(x => x.id === id)
+  if (!w) return
+  document.getElementById('wf-form').style.display=''
+  document.getElementById('wf-id').value=id
+  document.getElementById('wf-name').value=w.name
+  document.getElementById('wf-desc').value=w.description||''
+  document.getElementById('wf-spec').value=JSON.stringify(w.spec, null, 2)
+  window.scrollTo(0,0)
+}
+async function saveWorkflow() {
+  const id = document.getElementById('wf-id').value
+  const name = document.getElementById('wf-name').value.trim()
+  const desc = document.getElementById('wf-desc').value.trim()
+  let spec
+  try { spec = JSON.parse(document.getElementById('wf-spec').value) } catch(e) { alert('spec JSON 解析失败: '+e.message); return }
+  const body = { name, description: desc, spec }
+  const r = await fetch(API + (id ? `/api/workflows/${id}` : '/api/workflows'), {
+    method: id ? 'PUT' : 'POST', headers: authHeaders(), body: JSON.stringify(body)
   })
   const d = await r.json()
-  alert(r.ok ? '品牌配置已保存' : '保存失败: ' + (d.error||''))
+  if (r.ok) { alert('已保存'); document.getElementById('wf-form').style.display='none'; loadWorkflows() }
+  else alert('失败: ' + (d.error||''))
 }
-
-async function recharge(id) {
-  const amount = prompt('输入充值 Token 数量:')
-  if (!amount) return
-  await fetch(API + `/api/users/${id}/recharge`, {
-    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-    body:JSON.stringify({ amount: parseInt(amount), note: '后台充值' })
-  })
-  loadUsers()
+async function runWorkflow(id) {
+  const r = await fetch(API + `/api/workflows/${id}/run`, { method:'POST', headers: authHeaders() })
+  const d = await r.json()
+  if (r.ok) { alert('已入队(任务 #' + d.task_id + '),桌面端在线时自动执行'); loadTasks() }
+  else alert('失败: ' + (d.error||''))
 }
-
-async function toggleStatus(id, current) {
-  const next = current === 'active' ? 'suspended' : 'active'
-  await fetch(API + `/api/users/${id}/status`, {
-    method:'POST', headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},
-    body:JSON.stringify({ status: next })
-  })
-  loadUsers()
+async function delWorkflow(id) {
+  if (!confirm('删除工作流(关联定时任务也会删除)?')) return
+  await fetch(API + `/api/workflows/${id}`, { method:'DELETE', headers:{Authorization:'Bearer '+token} })
+  loadWorkflowTab()
+}
+async function showCronForm() {
+  document.getElementById('cron-form').style.display=''
+  // 填充工作流下拉
+  const sel = document.getElementById('cron-workflow')
+  sel.innerHTML = wfData.map(w => `<option value="${w.id}">${esc2(w.name)}</option>`).join('')
+}
+async function saveCron() {
+  const body = {
+    name: document.getElementById('cron-name').value.trim(),
+    cron_expr: document.getElementById('cron-expr').value.trim(),
+    workflow_id: parseInt(document.getElementById('cron-workflow').value) || null
+  }
+  if (!body.name || !body.cron_expr) { alert('名称和 cron 必填'); return }
+  const r = await fetch(API + '/api/cron-jobs', { method:'POST', headers: authHeaders(), body: JSON.stringify(body) })
+  const d = await r.json()
+  if (r.ok) { alert('定时任务已创建,下次执行: ' + (d.next_run_at||'').slice(0,16)); document.getElementById('cron-form').style.display='none'; loadCrons() }
+  else alert('失败: ' + (d.error||''))
+}
+async function togCron(id, en) {
+  await fetch(API + `/api/cron-jobs/${id}`, { method:'PUT', headers: authHeaders(), body: JSON.stringify({ enabled: !en }) })
+  loadCrons()
+}
+async function delCron(id) {
+  if (!confirm('删除定时任务?')) return
+  await fetch(API + `/api/cron-jobs/${id}`, { method:'DELETE', headers:{Authorization:'Bearer '+token} })
+  loadCrons()
 }
 </script>
 </body>

@@ -86,9 +86,9 @@ async function doLogin() {
     })
     const data = await resp.json()
     if (!resp.ok) { errEl.textContent = data.error || '登录失败'; btn.disabled = false; btn.textContent = '登录'; return }
-    // 登录成功，通知 Electron 主进程
+    // 登录成功，通知 Electron 主进程(附带凭据,主进程用 safeStorage 加密存储实现自动续期)
     if (window.electronAPI && window.electronAPI.cloudAuthSuccess) {
-      window.electronAPI.cloudAuthSuccess(JSON.stringify(data))
+      window.electronAPI.cloudAuthSuccess(JSON.stringify({ ...data, _credentials: { username: u, password: p } }))
     } else {
       // 非 Electron 环境（浏览器测试），存 localStorage
       localStorage.setItem('cloud_token', data.token)

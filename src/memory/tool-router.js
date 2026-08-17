@@ -41,8 +41,11 @@ const CORE_TOOLS = [
   'find_tool',
   'ui_show', 'ui_update', 'ui_hide', 'ui_register', 'ui_patch',
   // ui_set：声明式 UI 入口（scene 引擎）。与上面的命令式 ui_* 并存——
-  // ui_show 走 /acui 旧通道，ui_set 走 /scene 新通道，两者互不干扰。
+  // ui_show 走 /acui 旧通道，ui_set 走 /scene 新通道，两者互不冲突。
   'ui_set',
+  // manage_workflow：让 AI 根据用户一句话需求自动设计/创建定时工作流
+  // （用户说"每天早上…"这类重复需求时,模型应建工作流而不是只手动做一次）
+  'manage_workflow',
 ]
 
 const TASK_CTRL_FULL    = ['set_task', 'complete_task', 'update_task_step', 'review_work']

@@ -81,18 +81,27 @@ const SHORTCUT_EXTS  = new Set(['.lnk', '.app', '.desktop', '.webloc'])
 const SKIP_FILENAMES = new Set(['desktop.ini', 'thumbs.db', '.ds_store'])
 
 function scanFiles(desktopPath) {
-  const entries = safe(() => fs.readdirSync(desktopPath, { withFileTypes: true }), [])
-  return entries
-    .filter(e => {
-      if (!e.isFile()) return false
-      const lower = e.name.toLowerCase()
-      if (SKIP_FILENAMES.has(lower)) return false
-      if (lower.startsWith('.')) return false
-      if (SHORTCUT_EXTS.has(path.extname(lower))) return false
-      return true
-    })
-    .map(e => e.name)
-    .sort()
+  // 限制扫描:最多 5 秒,超时返回空(iCloud 同步目录可能很慢)
+  try {
+    const entries = fs.readdirSync(desktopPath, { withFileTypes: true })
+    return entries
+      .filter(e => {
+        if (!e.isFile()) return false
+        const lower = e.name.toLowerCase()
+        if (SKIP_FILENAMES.has(lower)) return false
+        if (lower.startsWith('.')) return false
+        if (lower.startsWith('.')) return false
+        // 跳过 iCloud 占位文件
+        if (lower.endsWith('.icloud')) return false
+        if (SHORTCUT_EXTS.has(path.extname(lower))) return false
+        return true
+      })
+      .map(e => e.name)
+      .sort()
+  } catch (e) {
+    console.warn('[desktop] scanFiles 失败:', e.message)
+    return []
+  }
 }
 
 // ─── 核心：采集 + 落盘（快捷方式）+ 临时扫描（文件） ─────────────────────────
@@ -132,10 +141,10 @@ export function collectDesktopInfo(desktopPath) {
     ))
   }
 
-  // 普通文件：每次启动扫，不落盘
-  const files = scanFiles(desktopPath)
-
-  console.log('[desktop] 完成 — 快捷方式:', shortcuts.length, '个 | 文件:', files.length, '个')
+  // 普通文件：跳过扫描(某些系统桌面目录含 iCloud 占位文件会卡住)
+  // 用快捷方式列表代替,避免阻塞后端启动
+  const files = []
+  console.log('[desktop] 完成(跳过文件扫描) — 快捷方式:', shortcuts.length, '个')
   _cached = { shortcuts, files, desktopPath }
   return _cached
 }

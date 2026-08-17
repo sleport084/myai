@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>MyAI</title>
+<style>
+:root{--bg:#06060c;--card:#111120;--card2:#181830;--accent:#64ffda;--accent2:#7c6ff0;--pink:#f472b6;--orange:#fb923c;--green:#34d399;--red:#f87171;--blue:#60a5fa;--text:#e8e8f5;--dim:#5a5a78;--dim2:#7a7a9a;--line:rgba(255,255,255,0.05);--r:14px;--r2:20px}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,'PingFang SC',sans-serif;background:var(--bg);color:var(--text);max-width:430px;margin:0 auto;min-height:100vh;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;top:-40%;left:-20%;width:140%;height:60%;background:radial-gradient(ellipse at center,rgba(124,111,240,0.05),transparent 60%);pointer-events:none;z-index:0}
+.login-page{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:20px;position:relative;z-index:1}
+.login-logo{width:72px;height:72px;border-radius:18px;background:linear-gradient(135deg,var(--accent),var(--accent2));margin-bottom:16px;display:flex;align-items:center;justify-content:center;font-size:32px;color:#06060c;font-weight:700;box-shadow:0 0 28px rgba(100,255,218,0.15)}
+.login-page h1{font-size:22px;margin-bottom:4px}
+.login-page .sub{font-size:13px;color:var(--dim);margin-bottom:28px}
+.login-tabs{display:flex;gap:4px;background:#0a0a14;border-radius:12px;padding:3px;margin-bottom:20px;width:100%;max-width:300px}
+.login-tabs span{flex:1;text-align:center;padding:9px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--dim);transition:.15s}
+.login-tabs span.active{background:#181830;color:var(--accent)}
+.login-form{width:100%;max-width:300px}
+.login-form .lf{margin-bottom:14px}
+.login-form label{display:block;font-size:12px;color:var(--dim2);margin-bottom:5px}
+.login-form input{width:100%;padding:12px 14px;background:#1a1a28;border:1px solid var(--line);border-radius:10px;color:var(--text);font-size:14px;outline:none}
+.login-form input:focus{border-color:rgba(100,255,218,0.25)}
+.login-form button{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#4dd0b0);border:none;border-radius:10px;color:#06060c;font-size:15px;font-weight:600;cursor:pointer;margin-top:6px}
+.login-form button:active{transform:scale(0.97)}
+.login-form .err{color:var(--red);font-size:12px;margin-top:6px;min-height:16px}
+.app{display:none;padding:0 14px 75px;position:relative;z-index:1}
+.app.show{display:block}
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;height:60px;background:rgba(8,8,16,0.88);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-around;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;transition:.2s;color:var(--dim);flex:1;position:relative}
+.bnav-item.active{color:var(--accent)}
+.bnav-item.active::before{content:'';position:absolute;top:-1px;width:24px;height:2px;background:var(--accent);border-radius:0 0 3px 3px}
+.bnav-item svg{width:21px;height:21px}
+.bnav-item span{font-size:10px}
+.sbar{display:flex;justify-content:space-between;align-items:center;padding:10px 4px 6px}
+.sbar .sl{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600}
+.sbar .dot{width:7px;height:7px;border-radius:50%;background:var(--orange);box-shadow:0 0 6px rgba(251,191,36,0.5);animation:blk 2s infinite}
+.sbar .dot.online{background:var(--green);box-shadow:0 0 6px rgba(52,211,153,0.5)}
+@keyframes blk{50%{opacity:0.3}}
+.sbar .sr{display:flex;gap:8px;font-size:11px;color:var(--dim);align-items:center}
+.sbar .token-pill{padding:2px 8px;background:rgba(100,255,218,0.1);border-radius:8px;color:var(--accent);font-size:10px;font-weight:600}
+.sbar .ph{font-size:18px;font-weight:700;padding:6px 0 2px}
+.chat-area{display:flex;flex-direction:column;gap:7px}
+.bubble{max-width:82%;padding:11px 15px;border-radius:16px;font-size:14px;line-height:1.55;word-break:break-word;white-space:pre-wrap}
+.bubble.ai{background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px;align-self:flex-start}
+.bubble.user{background:linear-gradient(135deg,rgba(100,255,218,0.1),rgba(124,111,240,0.06));border:1px solid rgba(100,255,218,0.1);border-bottom-right-radius:4px;align-self:flex-end}
+.typing{display:inline-flex;gap:3px;padding:3px 0}
+.typing span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:tp 1.2s infinite}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes tp{0%,60%,100%{opacity:0.3;transform:scale(0.8)}30%{opacity:1;transform:scale(1.1)}}
+.qrow{display:flex;gap:6px;overflow-x:auto;padding:6px 0;scrollbar-width:none}
+.qrow::-webkit-scrollbar{display:none}
+.qbtn{flex-shrink:0;padding:7px 13px;background:var(--card);border:1px solid var(--line);border-radius:18px;font-size:12px;color:var(--accent2);cursor:pointer;white-space:nowrap}
+.qbtn:active{transform:scale(0.93)}
+.cbar{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:7px 12px;background:rgba(8,8,16,0.88);backdrop-filter:blur(24px);border-top:1px solid var(--line);display:flex;gap:7px;z-index:99;align-items:center}
+.cbar input{flex:1;padding:9px 16px;background:var(--card);border:1px solid var(--line);border-radius:22px;color:var(--text);font-size:14px;outline:none}
+.cbar input:focus{border-color:rgba(100,255,218,0.2)}
+.cbar .send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#4dd0b0);border:none;color:#06060c;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.page{display:none;animation:fade .3s}.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+.stl{font-size:15px;font-weight:700;margin:16px 0 8px;display:flex;align-items:center;gap:6px}
+.stl .bar{width:3px;height:14px;border-radius:2px;background:var(--accent)}
+.fc{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px;margin-bottom:7px;display:flex;align-items:center;gap:11px;cursor:pointer;transition:.12s}
+.fc:active{transform:scale(0.98);background:var(--card2)}
+.fc .fi{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.fc .ft{font-size:13px;font-weight:600}
+.fc .fd{font-size:11px;color:var(--dim2)}
+.fc .fa{color:var(--dim);font-size:12px;flex-shrink:0}
+.mc{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px;margin-bottom:6px}
+.mc .mt{font-size:13px;line-height:1.45;margin-bottom:6px}
+.mc .mm{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mtag{padding:2px 7px;border-radius:5px;font-size:9px}
+.profile-card{background:linear-gradient(135deg,rgba(100,255,218,0.06),rgba(124,111,240,0.04));border:1px solid rgba(100,255,218,0.08);border-radius:var(--r2);padding:20px;margin-bottom:14px;text-align:center}
+.profile-card .pa{width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#06060c;font-weight:700}
+.profile-card .pn{font-size:17px;font-weight:700}
+.profile-card .pe{font-size:12px;color:var(--dim2);margin-top:2px}
+.profile-stats{display:flex;gap:12px;justify-content:center;margin-top:14px}
+.profile-stat{text-align:center}
+.profile-stat .n{font-size:18px;font-weight:700;color:var(--accent)}
+.profile-stat .l{font-size:10px;color:var(--dim);margin-top:2px}
+.set-item{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 14px;margin-bottom:6px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.12s}
+.set-item:active{transform:scale(0.98)}
+.set-item .si{font-size:18px;width:24px;text-align:center}
+.set-item .st{font-size:13px;flex:1}
+.set-item .sv{font-size:12px;color:var(--dim)}
+.set-item .sa{font-size:12px;color:var(--dim)}
+.conn-banner{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.1);border-radius:12px;padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px}
+.conn-banner.online{background:rgba(52,211,153,0.06);border-color:rgba(52,211,153,0.1)}
+.conn-banner .ci{font-size:20px}
+.conn-banner .ct{font-size:13px;flex:1}
+.conn-banner .ct small{font-size:11px;color:var(--dim2);display:block;margin-top:1px}
+</style>
+</head>
+<body>
+
+<!-- ══ 登录页 ══ -->
+<div class="login-page" id="loginPage">
+  <div class="login-logo" id="loginLogo">◆</div>
+  <h1 id="loginTitle">MyAI</h1>
+  <p class="sub" id="loginSub">登录你的账号开始使用</p>
+  <div class="login-tabs">
+    <span class="active" onclick="lTab('login',this)">登录</span>
+    <span onclick="lTab('register',this)">注册</span>
+  </div>
+  <div class="login-form">
+    <div id="lf-login">
+      <div class="lf"><label>用户名</label><input id="li-user" placeholder="输入用户名" autocomplete="username"></div>
+      <div class="lf"><label>密码</label><input id="li-pass" type="password" placeholder="输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="err" id="li-err"></div>
+      <button onclick="doLogin()">登录</button>
+    </div>
+    <div id="lf-register" style="display:none">
+      <div class="lf"><label>用户名</label><input id="rg-user" placeholder="设置用户名"></div>
+      <div class="lf"><label>密码</label><input id="rg-pass" type="password" placeholder="设置密码" onkeydown="if(event.key==='Enter')doRegister()"></div>
+      <div class="lf"><label>邮箱（选填）</label><input id="rg-email" placeholder="email@example.com"></div>
+      <div class="err" id="rg-err"></div>
+      <button onclick="doRegister()">注册</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 主应用 ══ -->
+<div class="app" id="mainApp">
+
+<!-- 对话页 -->
+<div class="page active" id="p-chat">
+  <div class="sbar">
+    <div class="sl"><div class="dot" id="connDot"></div><span id="connText">检查中…</span></div>
+    <div class="sr"><span class="token-pill" id="tokenPill">--</span></div>
+  </div>
+
+  <div class="conn-banner" id="connBanner">
+    <div class="ci" id="connIcon">💻</div>
+    <div class="ct" id="connDesc">桌面端未连接<small>请在电脑上启动 MyAI 并登录同账号</small></div>
+  </div>
+
+  <div class="chat-area" id="chatArea">
+    <div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息会通过云端中继转发给你的电脑，电脑端处理后回复。<br>不需要同一局域网，不需要填写 IP。</div>
+  </div>
+
+  <div class="qrow">
+    <div class="qbtn" onclick="qa('你能做什么？')">🎯 能做什么</div>
+    <div class="qbtn" onclick="qa('搜索记忆')">🧠 搜记忆</div>
+    <div class="qbtn" onclick="qa('今天有什么热点？')">🔥 热点</div>
+    <div class="qbtn" onclick="qa('有台风吗？')">🌀 台风</div>
+  </div>
+
+  <div class="cbar">
+    <input id="msgInput" placeholder="输入消息…" onkeydown="if(event.key==='Enter')sendMsg()" disabled>
+    <button class="send" onclick="sendMsg()" id="sendBtn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- 功能页 -->
+<div class="page" id="p-feat">
+  <div class="sbar"><div class="ph">功能</div></div>
+  <div class="stl"><div class="bar"></div>🧠 核心</div>
+  <div class="fc" onclick="goChat()"><div class="fi" style="background:rgba(100,255,218,0.1)">💬</div><div style="flex:1"><div class="ft">AI 对话</div><div class="fd">流式 · 多模型 · 工具循环</div></div><div class="fa">›</div></div>
+  <div class="fc" onclick="pg('mem')"><div class="fi" style="background:rgba(124,111,240,0.1)">🧠</div><div style="flex:1"><div class="ft">长期记忆</div><div class="fd">向量检索 · 专注栈 · 自我进化</div></div><div class="fa">›</div></div>
+  <div class="stl"><div class="bar"></div>🎙️ 语音</div>
+  <div class="fc"><div class="fi" style="background:rgba(96,165,250,0.1)">🎤</div><div style="flex:1"><div class="ft">ASR 语音识别</div><div class="fd">5引擎 · 阿里云·腾讯·讯飞·火山·离线</div></div><div class="fa">›</div></div>
+  <div class="fc"><div class="fi" style="background:rgba(251,191,36,0.1)">🔊</div><div style="flex:1"><div class="ft">TTS 语音合成</div><div class="fd">豆包2.0·MiniMax·OpenAI·ElevenLabs</div></div><div class="fa">›</div></div>
+  <div class="stl"><div class="bar"></div>🌐 自动化</div>
+  <div class="fc"><div class="fi" style="background:rgba(52,211,153,0.1)">🌐</div><div style="flex:1"><div class="ft">浏览器 + MCP</div><div class="fd">内置Chrome · 20个browser工具</div></div><div class="fa">›</div></div>
+  <div class="fc"><div class="fi" style="background:rgba(124,111,240,0.1)">🎨</div><div style="flex:1"><div class="ft">声明式 UI</div><div class="fd">11种卡片 · scene协议</div></div><div class="fa">›</div></div>
+  <div class="stl"><div class="bar"></div>🛠️ 工具（67个）</div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px">
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">📁</div><div style="font-size:9px;color:var(--dim2)">文件5</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">⚡</div><div style="font-size:9px;color:var(--dim2)">命令4</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🔍</div><div style="font-size:9px;color:var(--dim2)">搜索3</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🧠</div><div style="font-size:9px;color:var(--dim2)">记忆8</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🎨</div><div style="font-size:9px;color:var(--dim2)">媒体7</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">⏰</div><div style="font-size:9px;color:var(--dim2)">提醒6</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🤖</div><div style="font-size:9px;color:var(--dim2)">Agent7</div></div>
+    <div style="background:var(--card);border:1px solid var(--line);border-radius:11px;padding:9px;text-align:center"><div style="font-size:20px">🌐</div><div style="font-size:9px;color:var(--dim2)">浏览20</div></div>
+  </div>
+</div>
+
+<!-- 记忆页 -->
+<div class="page" id="p-mem">
+  <div class="sbar"><div class="ph">🧠 记忆</div></div>
+  <div class="stl"><div class="bar"></div>最近对话（通过中继）</div>
+  <div id="relayMsgList" style="display:flex;flex-direction:column;gap:6px"></div>
+</div>
+
+<!-- 我的页 -->
+<div class="page" id="p-me">
+  <div class="sbar"><div class="ph">我的</div></div>
+  <div class="profile-card">
+    <div class="pa" id="profAvatar">◆</div>
+    <div class="pn" id="profName">用户</div>
+    <div class="pe" id="profEmail"></div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="n" id="psQuota">--</div><div class="l">Token余额</div></div>
+      <div class="profile-stat"><div class="n" id="psUsed">--</div><div class="l">已使用</div></div>
+      <div class="profile-stat"><div class="n" id="psRole">--</div><div class="l">角色</div></div>
+    </div>
+  </div>
+  <div class="stl"><div class="bar"></div>桌面端</div>
+  <div class="set-item">
+    <div class="si" id="dsIcon">💻</div>
+    <div class="st">桌面端状态</div>
+    <div class="sv" id="dsStatus">检查中…</div>
+  </div>
+  <div class="stl"><div class="bar"></div>账号</div>
+  <div class="set-item" onclick="logout()"><div class="si">🚪</div><div class="st">退出登录</div><div class="sa">›</div></div>
+  <div class="set-item" onclick="alert((branding.app_name||'MyAI')+'\\n云端中继对话\\n\\n管理后台: '+ADMIN_API)"><div class="si">ℹ️</div><div class="st">关于 MyAI</div><div class="sa">›</div></div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bnav">
+  <div class="bnav-item active" onclick="pg('chat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"/></svg><span>对话</span></div>
+  <div class="bnav-item" onclick="pg('feat',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg><span>功能</span></div>
+  <div class="bnav-item" onclick="pg('mem',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm-1 17.9c-3.9-.5-7-3.9-7-7.9 0-.6.1-1.2.2-1.8L9 15v1c0 1.1.9 2 2 2v1.9z"/></svg><span>记忆</span></div>
+  <div class="bnav-item" onclick="pg('me',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg><span>我的</span></div>
+</div>
+
+</div>
+
+<script>
+const ADMIN_API = 'https://zy.tangdou2027.top/admin'
+let token = localStorage.getItem('cloud_token')
+let branding = {}
+let desktopOnline = false
+let pollTimer = null
+
+async function init() {
+  try {
+    const resp = await fetch(ADMIN_API + '/api/branding')
+    branding = await resp.json()
+    document.getElementById('loginLogo').textContent = branding.app_name?.[0] || '◆'
+    document.getElementById('loginTitle').textContent = branding.app_name || 'MyAI'
+    document.getElementById('loginSub').textContent = branding.slogan || '登录你的账号开始使用'
+  } catch {}
+
+  if (token) {
+    try {
+      const resp = await fetch(ADMIN_API + '/api/me', { headers: { Authorization: 'Bearer ' + token } })
+      if (resp.ok) {
+        const data = await resp.json()
+        enterApp(data.user, data.desktop)
+        return
+      }
+    } catch {}
+  }
+  document.getElementById('loginPage').style.display = 'flex'
+}
+
+function lTab(t, el) {
+  document.querySelectorAll('.login-tabs span').forEach(s => s.classList.remove('active'))
+  el.classList.add('active')
+  document.getElementById('lf-login').style.display = t === 'login' ? '' : 'none'
+  document.getElementById('lf-register').style.display = t === 'register' ? '' : 'none'
+}
+
+async function doLogin() {
+  const u = document.getElementById('li-user').value.trim()
+  const p = document.getElementById('li-pass').value
+  if (!u || !p) return
+  document.getElementById('li-err').textContent = '登录中...'
+  try {
+    const resp = await fetch(ADMIN_API + '/api/login', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p}) })
+    const data = await resp.json()
+    console.log('[login]', resp.status, JSON.stringify(data).slice(0,120))
+    if (!resp.ok) { document.getElementById('li-err').textContent = data.error || ('登录失败(' + resp.status + ')'); return }
+    token = data.token; localStorage.setItem('cloud_token', token)
+    enterApp(data.user, null)
+  } catch (e) { document.getElementById('li-err').textContent = '无法连接服务器: ' + e.message }
+}
+
+async function doRegister() {
+  const u = document.getElementById('rg-user').value.trim()
+  const p = document.getElementById('rg-pass').value
+  const e = document.getElementById('rg-email').value.trim()
+  if (!u || !p) return
+  document.getElementById('rg-err').textContent = ''
+  try {
+    const resp = await fetch(ADMIN_API + '/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({username:u,password:p,email:e}) })
+    const data = await resp.json()
+    if (!resp.ok) { document.getElementById('rg-err').textContent = data.error; return }
+    token = data.token; localStorage.setItem('cloud_token', token)
+    enterApp(data.user, null)
+  } catch { document.getElementById('rg-err').textContent = '无法连接服务器' }
+}
+
+function enterApp(user, desktop) {
+  document.getElementById('loginPage').style.display = 'none'
+  document.getElementById('mainApp').classList.add('show')
+  document.getElementById('profName').textContent = user.username
+  document.getElementById('profEmail').textContent = user.email || ''
+  document.getElementById('psRole').textContent = user.role || 'user'
+  const remaining = (user.token_quota||0) - (user.token_used||0)
+  document.getElementById('tokenPill').textContent = formatTokens(remaining)
+  document.getElementById('psQuota').textContent = formatTokens(remaining)
+  document.getElementById('psUsed').textContent = formatTokens(user.token_used)
+  // 加载历史对话（刷新不丢失）
+  loadHistory()
+  // 检查桌面端在线状态
+  checkDesktop()
+  // 启动轮询
+  startPolling()
+}
+
+// 加载历史对话
+async function loadHistory() {
+  try {
+    const resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
+    const data = await resp.json()
+    const msgs = data.messages || []
+    // 恢复 lastReplyId
+    lastReplyId = msgs.length > 0 ? msgs[0].id : 0
+    // 渲染到对话区
+    const area = document.getElementById('chatArea')
+    area.innerHTML = '' // 清空欢迎语
+    const sorted = msgs.slice().reverse() // 按时间正序
+    for (const m of sorted) {
+      if (m.content) addBubble(m.content, 'user')
+      if (m.reply && m.status === 'replied') addBubble(m.reply, 'ai')
+    }
+    if (sorted.length === 0) {
+      area.innerHTML = '<div class="bubble ai">登录成功！电脑端 MyAI 在线时即可在此对话。<br><br>消息通过云端中继转发，不需要局域网，不需要填写 IP。</div>'
+    }
+    // 也渲染记忆页
+    renderRelayMsgs(msgs)
+  } catch {}
+}
+
+function updateDesktopUI(online) {
+  desktopOnline = online
+  const dot = document.getElementById('connDot')
+  const text = document.getElementById('connText')
+  const banner = document.getElementById('connBanner')
+  const icon = document.getElementById('connIcon')
+  const desc = document.getElementById('connDesc')
+  const input = document.getElementById('msgInput')
+  if (online) {
+    dot.classList.add('online'); text.textContent = '桌面端在线'
+    banner.classList.add('online'); icon.textContent = '✅'
+    desc.innerHTML = '桌面端已连接<small>消息将通过云端中继转发</small>'
+    input.disabled = false; input.placeholder = '输入消息…'
+  } else {
+    dot.classList.remove('online'); text.textContent = '桌面端离线'
+    banner.classList.remove('online'); icon.textContent = '💻'
+    desc.innerHTML = '桌面端未连接<small>请在电脑上启动 MyAI 并登录同账号</small>'
+    input.disabled = true; input.placeholder = '等待桌面端上线…'
+  }
+  document.getElementById('dsStatus').textContent = online ? '✅ 在线' : '❌ 离线'
+  document.getElementById('dsIcon').textContent = online ? '✅' : '💻'
+}
+
+async function checkDesktop() {
+  try {
+    const resp = await fetch(ADMIN_API + '/api/relay/desktop-status', { headers: { Authorization: 'Bearer ' + token } })
+    const data = await resp.json()
+    updateDesktopUI(data.online)
+  } catch { updateDesktopUI(false) }
+}
+
+function startPolling() {
+  if (pollTimer) clearInterval(pollTimer)
+  pollTimer = setInterval(async () => {
+    checkDesktop()
+    fetchReplies()
+  }, 5000)
+}
+
+// ── 对话（通过 relay 中继）──
+async function sendMsg() {
+  const input = document.getElementById('msgInput')
+  const text = input.value.trim()
+  if (!text || !desktopOnline) return
+  input.value = ''
+  addBubble(text, 'user')
+  addBubble('<div class="typing"><span></span><span></span><span></span></div>', 'ai', true)
+  try {
+    await fetch(ADMIN_API + '/api/relay/send', {
+      method:'POST', headers:{'Content-Type':'application/json', Authorization:'Bearer '+token},
+      body:JSON.stringify({ content: text })
+    })
+  } catch (e) {
+    document.querySelector('.bubble.ai:last-child')?.remove()
+    addBubble('发送失败: ' + e.message, 'ai')
+  }
+}
+
+function qa(text) { document.getElementById('msgInput').value = text; sendMsg() }
+
+let lastReplyId = 0
+const shownReplies = new Set()  // 记录已显示过回复的消息 ID
+
+async function fetchReplies() {
+  try {
+    // 每次拉最近 20 条消息（不用 since_id，因为回复是旧消息的状态更新）
+    const resp = await fetch(ADMIN_API + '/api/relay/messages', { headers: { Authorization: 'Bearer ' + token } })
+    const data = await resp.json()
+    if (data.messages) {
+      // 按时间正序处理（旧到新）
+      const sorted = data.messages.slice().reverse()
+      for (const msg of sorted) {
+        if (msg.id > lastReplyId) lastReplyId = msg.id
+        // 只处理已回复且没显示过的消息
+        if (msg.status === 'replied' && msg.reply && !shownReplies.has(msg.id)) {
+          shownReplies.add(msg.id)
+          // 移除思考动画
+          const thinkings = document.querySelectorAll('.chat-area .typing')
+          thinkings.forEach(t => t.parentElement.remove())
+          addBubble(msg.reply, 'ai')
+        }
+      }
+      // 更新记忆页
+      renderRelayMsgs(data.messages)
+    }
+  } catch {}
+}
+
+function renderRelayMsgs(msgs) {
+  const list = document.getElementById('relayMsgList')
+  if (!msgs || msgs.length === 0) {
+    list.innerHTML = '<div class="mc" style="text-align:center;color:var(--dim)">暂无对话记录</div>'
+    return
+  }
+  list.innerHTML = msgs.slice(0, 10).map(m => `<div class="mc"><div class="mt">👤 ${(m.content||'').slice(0,80)}</div>${m.reply ? '<div class="mt" style="color:var(--accent)">🤖 ' + (m.reply||'').slice(0,80) + '</div>' : ''}<div class="mm"><span class="mtag" style="background:rgba(100,255,218,0.1);color:var(--accent)">${m.status}</span><span style="font-size:9px;color:var(--dim);margin-left:auto">${(m.created_at||'').slice(0,16)}</span></div></div>`).join('')
+}
+
+function addBubble(html, role, isRaw) {
+  const area = document.getElementById('chatArea')
+  const div = document.createElement('div')
+  div.className = 'bubble ' + role
+  if (isRaw) div.innerHTML = html; else div.textContent = html
+  area.appendChild(div)
+  area.scrollTop = area.scrollHeight
+}
+
+function goChat() { pg('chat', document.querySelector('.bnav-item')) }
+
+function pg(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.getElementById('p-'+id).classList.add('active')
+  document.querySelectorAll('.bnav-item').forEach(n => n.classList.remove('active'))
+  if (el) el.classList.add('active')
+  window.scrollTo(0, 0)
+  if (id === 'mem') fetchReplies()
+}
+
+function formatTokens(n) {
+  if (!n || n < 0) return '0'
+  if (n > 1e6) return (n/1e6).toFixed(1)+'M'
+  if (n > 1e3) return (n/1e3).toFixed(0)+'K'
+  return n.toString()
+}
+
+function logout() { localStorage.removeItem('cloud_token'); token=null; location.reload() }
+
+init()
+</script>
+</body>
+</html>

@@ -82,28 +82,29 @@ try {
 // Must complete before the main loop starts so buildSystemPrompt can inject the env block.
 await collectSystemInfo()
 
-// Scan the user's desktop (shortcuts cached by mtime, regular files scanned every time)
-collectDesktopInfo(getDesktopPath())
-
-// Scan installed software once so software/app/proxy questions can use local evidence.
-collectInstalledSoftware()
-
-// Scan the user's local resources (ssh hosts, keys, known_hosts, git identity)
-// for the "Self-Sufficient Execution" prompt — so the agent already knows what
-// the user has before being asked "上服务器看看".
-collectLocalResources()
-
-// Collect geo-location + live weather (refresh on IP change or after 7 days; weather refreshed every time)
-const geoResult = await collectGeoWeather()
-
-// Collect trending topics (CN → Weibo+Zhihu, others → HN+Reddit; 1h cache)
-await collectTrending(geoResult?.location?.country_code)
-
-// Scan locally installed AI agents (Claude Code, Codex, Hermes, OpenClaw, etc.) and persist to known_agents table
-await collectAgents()
-
-// Load persisted installed tools
-await loadInstalledTools()
+// ── 启动扫描全部延迟到后端 listen 之后,避免阻塞 HTTP server ──
+let geoResult = null  // 主作用域声明,后面 runTurn 会引用
+const _deferredStartup = async () => {
+  console.log('[startup] 后台扫描开始')
+  // 用 child_process 在子进程里跑同步扫描,不阻塞主事件循环
+  // 逐个 try,每个之间 yield 让 HTTP 能处理请求
+  const _yield = () => new Promise(r => setTimeout(r, 0))
+  try { collectDesktopInfo(getDesktopPath()); console.log('[startup] desktop OK') } catch (e) { console.warn('[startup] desktop:', e.message) }
+  // 注意:collectDesktopInfo 内部的 scanFiles 可能很慢(桌面文件多时)
+  // 但放在 setTimeout 里不会阻塞主事件循环太久,因为 yield 会释放
+  await _yield()
+  try { collectInstalledSoftware(); console.log('[startup] software OK') } catch (e) { console.warn('[startup] software:', e.message) }
+  await _yield()
+  try { collectLocalResources(); console.log('[startup] local OK') } catch (e) { console.warn('[startup] local:', e.message) }
+  await _yield()
+  try { geoResult = await Promise.race([collectGeoWeather(), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 10000))]); console.log('[startup] geo OK') } catch (e) { console.warn('[startup] geo:', e.message) }
+  await _yield()
+  try { await Promise.race([collectTrending(geoResult?.location?.country_code), new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 10000))]); console.log('[startup] trending OK') } catch (e) { console.warn('[startup] trending:', e.message) }
+  try { await collectAgents(); console.log('[startup] agents OK') } catch (e) { console.warn('[startup] agents:', e.message) }
+  try { await loadInstalledTools(); console.log('[startup] tools OK') } catch (e) { console.warn('[startup] tools:', e.message) }
+  console.log('[startup] 后台扫描完成')
+}
+setTimeout(() => { _deferredStartup().catch(e => console.warn('[startup] deferred:', e.message)) }, 2000)
 
 // Load Agent Skills metadata. Full SKILL.md bodies are injected only when a turn matches.
 const startupSkills = refreshSkills()
@@ -1452,8 +1453,10 @@ async function runTurn(input, label, msg = null) {
       onRetry: ({ attempt, nextAttempt, maxAttempts, delayMs, error }) => {
         emitEvent('llm_retry', { attempt, nextAttempt, maxAttempts, delayMs, error })
       },
-      onToolExecute: (name) => {
-        emitEvent('tool_executing', { name })
+      onToolExecute: (name, args) => {
+        // 带 args 让行动日志能实时显示浏览器正在打开的网址/点击的元素
+        const clean = args && typeof args === 'object' ? args : {}
+        emitEvent('tool_executing', { name, args: clean })
       },
       onStream: ({ event, mode, text, name }) => {
         if (event === 'start') {
@@ -1905,6 +1908,16 @@ async function main() {
   // 云端中继轮询：在 API 启动后立即开始（不等 LLM 激活），
   // 这样用户即使没配 LLM Key，手机端也能看到桌面端”在线”。
   startRelayPoller(apiPort)
+
+  // 本地工作流引擎(桌面端定制,本地调度本地执行) + 云端队列轮询(服务器下发的任务)
+  try {
+    const { initWorkflowLocal } = await import('./workflow-local.js')
+    initWorkflowLocal(apiPort)
+  } catch (e) { console.warn('[workflow-local] 本地工作流引擎启动失败:', e.message) }
+  try {
+    const { startWorkflowClient } = await import('./workflow-client.js')
+    startWorkflowClient(apiPort)
+  } catch (e) { console.warn('[workflow] 云端任务轮询启动失败:', e.message) }
 
   // Start TUI
   startTUI('ID:000001')

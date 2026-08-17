@@ -152,11 +152,24 @@ function scanWindowsStartMenu(apps) {
 }
 
 function scanMacApplications(apps) {
+  // 只列顶层 .app,不递归进入 .app 包内部(否则会遍历成千上万的 Frameworks/Resources 文件)
   for (const root of ['/Applications', path.join(os.homedir(), 'Applications')]) {
-    walkFiles(root, (fullPath, fileName) => {
-      if (!fullPath.endsWith('.app') && !fileName.endsWith('.app')) return
-      addApp(apps, path.basename(fileName, '.app'), 'applications')
-    }, 1)
+    if (!fs.existsSync(root)) continue
+    let entries
+    try { entries = fs.readdirSync(root, { withFileTypes: true }) } catch { continue }
+    for (const entry of entries) {
+      if (entry.name.endsWith('.app')) {
+        addApp(apps, path.basename(entry.name, '.app'), 'applications')
+      } else if (entry.isDirectory()) {
+        // 子目录(如 /Applications/Utilities),递归一层
+        try {
+          const sub = fs.readdirSync(path.join(root, entry.name), { withFileTypes: true })
+          for (const s of sub) {
+            if (s.name.endsWith('.app')) addApp(apps, path.basename(s.name, '.app'), 'applications')
+          }
+        } catch {}
+      }
+    }
   }
 }
 

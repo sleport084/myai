@@ -25,6 +25,7 @@ import { execCommand, execKillProcess, execListProcesses } from './tools/shell.j
 import { execBrowserRead, execFetchUrl, execWebSearch } from './tools/web.js'
 import { execDowngradeMemory, execMergeMemories, execProbeMemory, execRecallMemory, execSearchMemory, execSkipConsolidation, execSkipRecognition, execUpsertMemory } from './tools/memory.js'
 import { execManageReminder } from './tools/reminders.js'
+import { execManageWorkflow } from './tools/workflow.js'
 import { execGenerateImage, execGenerateLyrics, execGenerateMusic, execGenerateVideo, execMediaMode, execMusic, execSpeak } from './tools/media.js'
 import { execManageRule } from './tools/rules.js'
 import { execUISet } from './tools/scene.js'
@@ -209,6 +210,8 @@ async function executeToolUnchecked(name, args, context = {}) {
       case 'schedule_reminder':
       case 'manage_reminder':
         return await execManageReminder(args, context)
+      case 'manage_workflow':
+        return await execManageWorkflow(args)
       case 'manage_prefetch_task':
         return execManagePrefetchTask(args)
       case 'manage_rule':

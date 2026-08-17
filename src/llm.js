@@ -480,6 +480,15 @@ function summarizeToolCall(name, args = {}) {
       const when = kind === 'once' ? (args.due_at || '?') : `${kind} ${args.time || '?'}`
       return `manage_reminder(create ${when}: ${String(args.task || '?').slice(0, 30)})`
     }
+    case 'manage_workflow': {
+      const action = args.action || 'list'
+      if (action === 'create') {
+        const n = (args.steps || []).length
+        return `manage_workflow(create ${args.cron_expr ? args.cron_expr + ' ' : ''}${args.name || '?'} · ${n}步)`
+      }
+      if (action === 'run') return `manage_workflow(run #${args.workflow_id || '?'})`
+      return `manage_workflow(${action}${args.workflow_id ? ' #' + args.workflow_id : ''})`
+    }
     case 'write_file':
       return `write_file(${args.path || args.filename || args.file_path || '?'})`
     case 'delete_file':

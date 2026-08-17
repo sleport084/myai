@@ -1215,6 +1215,56 @@ const browserEmbedBridge = window.bailongma?.browserEmbed || null;
 let browserPreviewObjectUrl = "";
 let browserPreviewLoadToken = 0;
 let browserPreviewActive = false;
+
+// ── 行动日志双模式: log(持久记录) / web(实时网页视图) ──────────────────
+// web 模式: 浏览器视口常驻显示(AI 打开的页面实时可见),可直接扫码/登录,
+// 登录态保存在专用 Chrome profile 中长期有效。自动隐藏逻辑在 web 模式下被抑制。
+const ACTION_VIEW_KEY = "bailongma-action-view";
+let actionViewMode = "log";
+try { actionViewMode = localStorage.getItem(ACTION_VIEW_KEY) === "web" ? "web" : "log"; } catch {}
+
+function updateBrowserPlaceholder() {
+  const ph = document.getElementById("browser-preview-placeholder");
+  if (!ph) return;
+  ph.hidden = !(actionViewMode === "web" && !browserPreviewActive);
+}
+
+function setActionView(mode) {
+  actionViewMode = mode === "web" ? "web" : "log";
+  try { localStorage.setItem(ACTION_VIEW_KEY, actionViewMode); } catch {}
+  const mod = document.getElementById("action-log-module");
+  if (mod) mod.dataset.view = actionViewMode;
+  document.getElementById("action-view-log-btn")?.classList.toggle("active", actionViewMode === "log");
+  document.getElementById("action-view-web-btn")?.classList.toggle("active", actionViewMode === "web");
+  const popBtn = document.getElementById("action-view-popout-btn");
+  if (popBtn) popBtn.hidden = actionViewMode !== "web";
+  if (actionViewMode === "web") {
+    // 展示视口: 有活跃页面显示页面,否则占位提示
+    if (browserPreviewEl) { browserPreviewEl.hidden = false; browserPreviewEl.setAttribute("aria-hidden", "false"); }
+    updateBrowserPlaceholder();
+    if (browserPreviewActive) scheduleNativeBrowserEmbedSync();
+    else if (browserEmbedBridge) callBrowserEmbed("getState");  // 可能有仍存活的页面,查询恢复
+  } else {
+    updateBrowserPlaceholder();
+    if (!browserPreviewActive && browserPreviewEl) browserPreviewEl.hidden = true;
+  }
+}
+
+function initActionViewToggle() {
+  const logBtn = document.getElementById("action-view-log-btn");
+  const webBtn = document.getElementById("action-view-web-btn");
+  const popBtn = document.getElementById("action-view-popout-btn");
+  logBtn?.addEventListener("click", () => setActionView("log"));
+  webBtn?.addEventListener("click", () => setActionView("web"));
+  // 弹出为独立窗口(外部浏览器体验,同一 profile 登录态共享)
+  popBtn?.addEventListener("click", () => {
+    if (browserEmbedBridge && typeof browserEmbedBridge.getState === "function") {
+      callBrowserEmbed("getState");
+    }
+    void showNativeBrowserWindow({ state: "ready" });
+  });
+  setActionView(actionViewMode);  // 应用持久化的模式
+}
 let browserPreviewPending = false;
 let browserPreviewNativeUrl = "";
 let browserEmbedFrameRequest = 0;
@@ -1303,6 +1353,8 @@ function describeAction(name, args = {}, result = "") {
 
 function addActionLogEntry(name, args = {}, result = "", ok = true, ts = Date.now()) {
   if (ok === false || ACTION_LOG_IGNORED_TOOLS.has(name)) return;
+  // 同名工具的"进行中"条目转正(完成)
+  clearRunningActionLogEntry(name);
   actionLog.push({
     text: describeAction(name, args, result),
     kind: "action",
@@ -1310,8 +1362,33 @@ function addActionLogEntry(name, args = {}, result = "", ok = true, ts = Date.no
     ts: Number(ts) || Date.now(),
   });
   actionLog = actionLog.slice(-ACTION_LOG_LIMIT);
-  try { localStorage.setItem(ACTION_LOG_KEY, JSON.stringify(actionLog)); } catch {}
+  try { localStorage.setItem(ACTION_LOG_KEY, JSON.stringify(actionLog.filter(e => e.kind !== "running"))); } catch {}
   renderActionLog();
+}
+
+// ── 进行中条目: 工具开始执行时先入列(实时显示浏览器正在做什么),完成/失败时移除 ──
+function addRunningActionLogEntry(name, args = {}) {
+  if (ACTION_LOG_IGNORED_TOOLS.has(name)) return;
+  clearRunningActionLogEntry(name);
+  const label = L2.toolAction(name || "tool", args);
+  const subject = L2.formatToolSubject(name, args, null);
+  actionLog.push({
+    text: subject ? `正在${label} · ${subject}…` : `正在${label}…`,
+    kind: "running",
+    tool: String(name || "tool"),
+    ts: Date.now(),
+  });
+  actionLog = actionLog.slice(-ACTION_LOG_LIMIT);
+  renderActionLog();
+}
+
+function clearRunningActionLogEntry(name) {
+  const n = String(name || "");
+  const before = actionLog.length;
+  actionLog = actionLog.filter(e => !(e.kind === "running" && e.tool === n));
+  if (actionLog.length !== before) {
+    try { localStorage.setItem(ACTION_LOG_KEY, JSON.stringify(actionLog)); } catch {}
+  }
 }
 
 function isCardBrowserAction(data = {}) {
@@ -1354,6 +1431,11 @@ function callBrowserEmbed(method, payload) {
 
 function hideNativeBrowserEmbed() {
   if (!browserEmbedBridge) return;
+  // web 模式且页面活跃: 保持原生嵌入视图常驻(不随 visibilitychange/滚动隐藏)
+  if (actionViewMode === "web" && browserPreviewActive) {
+    scheduleNativeBrowserEmbedSync();
+    return;
+  }
   browserEmbedAnimationUntil = 0;
   if (browserEmbedFrameRequest) {
     cancelAnimationFrame(browserEmbedFrameRequest);
@@ -1452,7 +1534,8 @@ function finalizeBrowserPreviewHidden({
     browserPreviewPending = false;
   }
   if (browserPreviewEl) {
-    browserPreviewEl.hidden = true;
+    // web 模式: 视口保持可见,收成占位层(页面已关)
+    browserPreviewEl.hidden = actionViewMode === "web" ? false : true;
     browserPreviewEl.dataset.state = "idle";
     delete browserPreviewEl.dataset.renderer;
     browserPreviewEl.setAttribute("aria-hidden", "true");
@@ -1532,6 +1615,12 @@ function concealBrowserPreviewForAction({ hideEmbed = true } = {}) {
 }
 
 function hideBrowserPreview({ immediate = false } = {}) {
+  // web 模式下页面常驻(扫码/登录场景),只在页面真正关闭时收起为占位层
+  if (actionViewMode === "web" && browserPreviewActive) {
+    browserPreviewActive = false;
+    updateBrowserPlaceholder();
+    return;
+  }
   browserPreviewHostTransitionToken += 1;
   browserPreviewHostTransitioning = false;
   browserPreviewHostTransitionTarget = "";
@@ -1578,6 +1667,7 @@ async function showNativeBrowserPreview(data = {}) {
   browserPreviewPending = false;
   browserPreviewActive = true;
   browserPreviewDisplayMode = "card";
+  updateBrowserPlaceholder();
   if (data.url) browserPreviewNativeUrl = String(data.url);
   if (browserPreviewEl) {
     browserPreviewEl.dataset.renderer = "native";
@@ -1688,6 +1778,7 @@ async function loadBrowserPreviewImage(data = {}) {
     if (previousObjectUrl) URL.revokeObjectURL(previousObjectUrl);
     browserPreviewPending = false;
     browserPreviewActive = true;
+    updateBrowserPlaceholder();
     if (browserPreviewEl) {
       browserPreviewEl.dataset.renderer = "fallback";
       browserPreviewEl.dataset.state = "ready";
@@ -2100,6 +2191,7 @@ function advanceHeartbeatWave() {
 }
 
 renderActionLog();
+initActionViewToggle();
 updateHeartbeatFacts();
 renderHeartbeatWave();
 setInterval(advanceHeartbeatWave, HEARTBEAT_FRAME_INTERVAL_MS);
@@ -2531,6 +2623,8 @@ function handle({ type, data = {}, ts = null }) {
       triggerHeartbeatPulse(HEARTBEAT_TOOL_STRENGTH, "minor");
       const stream = currentStream();
       const action = data.name ? stream.toolAction(data.name, data.args) : "处理事务";
+      // 行动日志实时显示"正在执行"条目(含浏览器正在打开的网址/点击的元素)
+      addRunningActionLogEntry(data.name, data.args || {});
       if (isCardBrowserAction(data)) prepareBrowserPreview(data);
       else if (String(data.name || "").startsWith("browser_") && data.browser_display_mode === "window") {
         void showNativeBrowserWindow(data);
@@ -3687,6 +3781,12 @@ chat = initChat({
     }
     if (/热点|热搜/.test(text) && !document.body.classList.contains('hotspot-mode')) {
       toggleHotspot();
+    }
+    if (/技能|skill/.test(text) && !document.body.classList.contains('skill-mode')) {
+      import("./skill-panel.js").then(m => m.toggleSkillPanel(true));
+    }
+    if (/工作流|自动化/.test(text) && !document.body.classList.contains('workflow-mode')) {
+      import("./workflow-panel.js").then(m => m.toggleWorkflowPanel(true));
     }
     if (/世界杯/.test(text) && !document.body.classList.contains('worldcup-mode')) {
       toggleWorldcup();
@@ -6304,6 +6404,40 @@ initTyphoon();
   videoExitBtn?.addEventListener("click", closeAndDestroyVideo);
   imageExitBtn?.addEventListener("click", () => setImageModeActive(false));
 
+  // ── 图片保存 + 全屏预览 ───────────────────────────────────────────────────
+  // 保存按钮:通过 bailongma.saveImage IPC 让主进程弹出"另存为"对话框
+  const imageSaveBtn = document.getElementById("image-save-btn");
+  imageSaveBtn?.addEventListener("click", async () => {
+    const src = imageDisplay?.src;
+    if (!src) return;
+    try {
+      const resp = await fetch(src);
+      const blob = await resp.blob();
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result.split(",")[1];
+        const ext = blob.type.split("/")[1] || "png";
+        const title = (imageTitle?.textContent || "image").replace(/[\\/:*?"<>|]/g, "_").slice(0, 40);
+        await window.bailongma?.saveImage?.({ base64, ext, filename: title });
+      };
+      reader.readAsDataURL(blob);
+    } catch (e) { console.log("[image] save failed", e.message); }
+  });
+
+  // 点击图片:全屏预览(放大查看,ESC/点击关闭)
+  imageDisplay?.addEventListener("click", () => {
+    const src = imageDisplay.src;
+    if (!src) return;
+    const overlay = document.createElement("div");
+    overlay.className = "image-fullscreen-overlay";
+    overlay.innerHTML = `<img src="${src}" class="image-fullscreen-img" /><button class="image-fullscreen-close" title="关闭(ESC)">×</button>`;
+    overlay.addEventListener("click", () => overlay.remove());
+    document.addEventListener("keydown", function escClose(e) {
+      if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escClose); }
+    });
+    document.body.appendChild(overlay);
+  });
+
   window.addEventListener("keydown", (e) => {
     if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA" || e.target?.isContentEditable) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -6315,6 +6449,23 @@ initTyphoon();
     if (e.key === "h" || e.key === "H") {
       e.preventDefault();
       toggleHotspot();
+    }
+    // S key: toggle skill panel
+    if (e.key === "s" || e.key === "S") {
+      if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA" || e.target?.isContentEditable) return;
+      e.preventDefault();
+      import("./skill-panel.js").then(m => m.toggleSkillPanel());
+    }
+    // W key: toggle workflow panel (客户本地工作流)
+    if (e.key === "w" || e.key === "W") {
+      if (e.target?.tagName === "INPUT" || e.target?.tagName === "TEXTAREA" || e.target?.isContentEditable) return;
+      e.preventDefault();
+      import("./workflow-panel.js").then(m => m.toggleWorkflowPanel());
+    }
+    // ESC: close skill/workflow panels
+    if (e.key === "Escape") {
+      import("./skill-panel.js").then(m => { if (m.isSkillActive()) { m.toggleSkillPanel(false); e.preventDefault(); } });
+      import("./workflow-panel.js").then(m => { if (m.isWorkflowPanelActive()) { m.toggleWorkflowPanel(false); e.preventDefault(); } });
     }
   });
 })();

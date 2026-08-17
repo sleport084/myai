@@ -1,4 +1,6 @@
 import { createHotspotPanel } from './hotspot-panel.js';
+import { createSkillPanel } from './skill-panel.js';
+import { createWorkflowPanel } from './workflow-panel.js';
 import { createWorldcupPanel } from './worldcup-panel.js';
 import { createTyphoonPanel } from './typhoon-panel.js';
 import { createDocPanel } from './doc-panel.js';
@@ -151,12 +153,17 @@ const createSecondaryPanel = () => `
       </div>
     </section>
 
-    <section class="l2-module action-log-module" aria-labelledby="action-log-title">
+    <section class="l2-module action-log-module" id="action-log-module" data-view="log" aria-labelledby="action-log-title">
       <div class="action-log-surface" id="action-log-surface">
         <div class="l2-module-head compact">
           <div>
             <div class="l2-module-kicker">ACTION LOG</div>
             <h2 class="l2-module-title" id="action-log-title">行动日志</h2>
+          </div>
+          <div class="action-view-toggle" role="tablist" aria-label="行动日志视图切换">
+            <button type="button" class="action-view-btn active" id="action-view-log-btn" data-view="log" role="tab" title="持久化动作记录">📋 记录</button>
+            <button type="button" class="action-view-btn" id="action-view-web-btn" data-view="web" role="tab" title="实时查看 AI 打开的网页(可扫码/登录,登录态长期保留)">🌐 网页</button>
+            <button type="button" class="action-view-popout" id="action-view-popout-btn" title="在独立窗口打开浏览器(同一登录态)" hidden>⤢</button>
           </div>
         </div>
         <div class="action-log" id="action-log" aria-live="polite">
@@ -166,6 +173,11 @@ const createSecondaryPanel = () => `
       <div class="browser-preview" id="browser-preview" data-state="idle" aria-label="Agent 正在操作浏览器" hidden>
         <div class="browser-preview-viewport" id="browser-preview-native-slot">
           <img class="browser-preview-image" id="browser-preview-image" alt="Agent 正在操作的实时网页" draggable="false">
+          <div class="browser-preview-placeholder" id="browser-preview-placeholder">
+            <div class="bp-placeholder-icon">🌐</div>
+            <div class="bp-placeholder-title">AI 还没有打开网页</div>
+            <div class="bp-placeholder-desc">让 AI 浏览任意网站后，这里实时显示页面。<br>可直接扫码、登录账号——登录态长期保留。</div>
+          </div>
         </div>
       </div>
     </section>
@@ -1088,7 +1100,10 @@ const createImagePanel = () => `
 <div class="image-panel" id="image-panel">
   <div class="media-stage-head">
     <div class="media-stage-title" id="image-title">图片</div>
-    <button class="image-exit-btn" id="image-exit-btn" type="button" title="关闭图片">x</button>
+    <div class="media-stage-actions">
+      <button class="image-save-btn" id="image-save-btn" type="button" title="保存图片到本地">⬇ 保存</button>
+      <button class="image-exit-btn" id="image-exit-btn" type="button" title="关闭图片">x</button>
+    </div>
   </div>
   <div class="image-surface" id="image-surface">
     <img id="image-display" alt="" />
@@ -1115,6 +1130,8 @@ export function createBrainUiMarkup() {
     createMusicPanel(),
     createImagePanel(),
     createHotspotPanel(),
+    createSkillPanel(),
+    createWorkflowPanel(),
     createWorldcupPanel(),
     createTyphoonPanel(),
     createDocPanel(),
