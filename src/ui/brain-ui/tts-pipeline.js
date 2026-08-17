@@ -177,7 +177,7 @@ function activateTTSAudioGraph(graph) {
     try { ttsAudioGraph.teardown?.(); } catch {}
   }
   ttsAudioGraph = graph || null;
-  window.xiaobailongVoice?.setTTSAnalyser?.(ttsAudioGraph?.analyser || null);
+  window.bailongmaVoice?.setTTSAnalyser?.(ttsAudioGraph?.analyser || null);
 }
 
 function clearTTSAudioGraph(graph) {
@@ -192,7 +192,7 @@ function clearTTSAudioGraph(graph) {
     try { ttsAudioGraph.teardown?.(); } catch {}
     ttsAudioGraph = null;
   }
-  window.xiaobailongVoice?.setTTSAnalyser?.(null);
+  window.bailongmaVoice?.setTTSAnalyser?.(null);
 }
 
 function startTTSAudio(audioEl, revokeUrl, opts = {}) {
@@ -201,7 +201,7 @@ function startTTSAudio(audioEl, revokeUrl, opts = {}) {
   audioEl.volume = 1.0;
   const audioGraph = attachJarvisAudioGraph(audioEl, activeTTSVoiceId);
   activateTTSAudioGraph(audioGraph);
-  if (manageMic) window.xiaobailongVoice?.suspendForTTS?.();
+  if (manageMic) window.bailongmaVoice?.suspendForTTS?.();
   const finish = () => {
     clearTTSAudioGraph(audioGraph);
     if (revokeUrl) { try { URL.revokeObjectURL(revokeUrl); } catch {} }
@@ -210,7 +210,7 @@ function startTTSAudio(audioEl, revokeUrl, opts = {}) {
     ttsAudioEl = null;
     if (onComplete) { onComplete(); return; }
     ttsCurrentText = '';
-    if (manageMic) window.xiaobailongVoice?.resumeAfterMedia();
+    if (manageMic) window.bailongmaVoice?.resumeAfterMedia();
   };
   audioEl.onended = finish;
   audioEl.onerror = finish;
@@ -219,7 +219,7 @@ function startTTSAudio(audioEl, revokeUrl, opts = {}) {
     clearTTSAudioGraph(audioGraph);
     if (ttsAudioEl !== audioEl) return;
     if (onComplete) { ttsAudioEl = null; onComplete(); return; }
-    if (manageMic) window.xiaobailongVoice?.resumeAfterMedia();
+    if (manageMic) window.bailongmaVoice?.resumeAfterMedia();
   });
 }
 
@@ -297,7 +297,7 @@ export async function playTTSReply(text) {
   } catch {
     clearTTSAudioGraph();
     ttsCurrentText = '';
-    window.xiaobailongVoice?.resumeAfterMedia();
+    window.bailongmaVoice?.resumeAfterMedia();
   }
 }
 
@@ -348,7 +348,7 @@ async function pumpSttsQueue() {
   }
   sttsPlaying = true;
   sttsCurSeg = seg;
-  if (!sttsMicSuspended) { sttsMicSuspended = true; window.xiaobailongVoice?.suspendForTTS?.(); }
+  if (!sttsMicSuspended) { sttsMicSuspended = true; window.bailongmaVoice?.suspendForTTS?.(); }
   const onComplete = () => {
     sttsSpoken += seg;
     sttsCurSeg = '';
@@ -388,7 +388,7 @@ export function endStreamingTTS() {
   sttsActive = false;
   ttsStreamingMode = false;
   clearTTSAudioGraph();
-  if (sttsMicSuspended) { sttsMicSuspended = false; window.xiaobailongVoice?.resumeAfterMedia(); }
+  if (sttsMicSuspended) { sttsMicSuspended = false; window.bailongmaVoice?.resumeAfterMedia(); }
   sttsQueue = []; sttsBuf = ''; sttsCurSeg = ''; sttsSpoken = ''; sttsPlaying = false;
 }
 

@@ -877,6 +877,7 @@ export function createVoiceCore({ canvas, transcript, getChatInput, getSendMessa
     if (!keepIntent) userWantedMic = false;
     bargeinBuffer = [];
     bargeinBuffering = false;
+    suspendedByMedia = false; // 防悬挂：显式停止会话时必须清掉挂起标志，否则后续 resume/ptt 全被守卫拦截
     stopCloudStream();
     stopMic();
     diagStop();
@@ -908,7 +909,15 @@ export function createVoiceCore({ canvas, transcript, getChatInput, getSendMessa
 
   // 会话恢复（= 原 resumeVoiceInputFromMedia）。fromBargein=true 表示由打断检测触发。
   async function resumeSession(fromBargein = false) {
-    if (!suspendedByMedia || !userWantedMic) return;
+    if (!suspendedByMedia) return;
+    if (!userWantedMic) {
+      // 常开意图已不存在（如中途被 stopSession），但挂起标志还挂着 → 只做状态清理，
+      // 否则 bargeinBuffering 残留 true 会让后续所有麦克风音频全部进缓冲、永远不发送(tx=0)。
+      suspendedByMedia = false;
+      bargeinBuffer = [];
+      bargeinBuffering = false;
+      return;
+    }
     suspendedByMedia = false;
 
     // 拿走缓冲区快照并立刻停止写入，避免 WS 重连期间继续堆积

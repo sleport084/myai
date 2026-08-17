@@ -231,7 +231,7 @@ const createConsole = () => `
   <div id="input-row">
     <div id="slash-menu" class="slash-menu" role="listbox" aria-label="命令" hidden></div>
     <span class="prompt-mark">▸</span>
-    <textarea id="msg-input" rows="1" placeholder="向 Longma 发送消息…（输入 / 调出命令，Shift+Enter 换行）" autocomplete="off"></textarea>
+    <textarea id="msg-input" rows="1" placeholder="发送消息… 按住空格键说话（输入 / 调命令，Shift+Enter 换行）" autocomplete="off"></textarea>
     <button id="send-btn" type="button">发送</button>
   </div>
 </section>

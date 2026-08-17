@@ -2000,7 +2000,7 @@ export function initSettingsPanel(API) {
       pttHeld = true;
       // 不论是否在播，stopTTS 内部已做 no-op 守卫
       try { window.stopTTS?.(); } catch {}
-      window.xiaobailongVoice?.pttStart?.();
+      window.bailongmaVoice?.pttStart?.();
     }, { capture: true });
 
     window.addEventListener("keyup", (e) => {
@@ -2008,7 +2008,7 @@ export function initSettingsPanel(API) {
       if (!pttHeld) return;
       pttHeld = false;
       e.preventDefault();
-      window.xiaobailongVoice?.pttEnd?.();
+      window.bailongmaVoice?.pttEnd?.();
     }, { capture: true });
 
     // 切到后台/失焦（如点开 DevTools、切窗口）时如果还按着，强制释放 PTT，避免 mic 永远不关。
@@ -2016,7 +2016,7 @@ export function initSettingsPanel(API) {
     window.addEventListener("blur", () => {
       if (!pttHeld) return;
       pttHeld = false;
-      window.xiaobailongVoice?.pttEnd?.({ send: false });
+      window.bailongmaVoice?.pttEnd?.({ send: false });
     });
   })();
 
