@@ -52,9 +52,24 @@ export function initVoicePanel({
   const continuous = createContinuousPolicy(core, { getAutoSend });
 
   // 常开会话开关：点球/按钮触发，也被 PTT 在「mic 未开」时复用（保持叠加语义）
+  // ── 麦克风状态 Toast 提示 ──
+  let toastEl = null, toastTimer = null;
+  function voiceToast(text, kind = '') {
+    if (!toastEl) {
+      toastEl = document.createElement('div');
+      toastEl.className = 'voice-toast';
+      document.body.appendChild(toastEl);
+    }
+    toastEl.textContent = text;
+    toastEl.className = 'voice-toast show ' + kind;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { toastEl.classList.remove('show') }, 2200);
+  }
+
   async function toggleVoice() {
     if (!core.micActive) {
       if (!navigator.mediaDevices?.getUserMedia) {
+        voiceToast('🎤 无法访问麦克风', 'rec-err');
         if (transcript) {
           transcript.textContent = window.isSecureContext === false
             ? '局域网麦克风需要 HTTPS，请使用安全访问链接'
@@ -64,13 +79,17 @@ export function initVoicePanel({
       }
       const isRemoteHost = !['localhost', '127.0.0.1', '::1'].includes(location.hostname);
       if (isRemoteHost && !getApiToken()) {
+        voiceToast('🎤 局域网访问未配对', 'rec-err');
         if (transcript) transcript.textContent = '局域网访问未配对，请使用桌面端显示的带口令链接';
         return false;
       }
       // startSession 内部已处理失败回退 + 状态同步
-      return Boolean(await core.startSession());
+      const ok = Boolean(await core.startSession());
+      voiceToast(ok ? '🎤 麦克风已开启 · 常听模式' : '🎤 麦克风启动失败', ok ? 'rec-on' : 'rec-err');
+      return ok;
     }
     core.stopSession();
+    voiceToast('🔇 麦克风已关闭', 'rec-off');
     return false;
   }
 
@@ -117,8 +136,18 @@ export function initVoicePanel({
     },
     stop: () => core.stopSession(),
     setTTSAnalyser: (analyser) => core.setTTSAnalyser(analyser),
-    pttStart: ptt.pttStart,
-    pttEnd: ptt.pttEnd,
+    // PTT: 按住空格 → 开麦(左面板动态反馈由 body.ptt-active CSS 驱动) + toast
+    pttStart: async (...a) => {
+      const r = await ptt.pttStart(...a);
+      voiceToast('🎙️ 正在录音 · 松开发送', 'rec-on');
+      return r;
+    },
+    pttEnd: (...a) => {
+      const opts = a[0] || {};
+      const r = ptt.pttEnd(...a);
+      if (opts.send !== false) voiceToast('⏳ 识别中…', 'rec-off');
+      return r;
+    },
   };
 
   window.addEventListener('bailongma:video-mode', (event) => {

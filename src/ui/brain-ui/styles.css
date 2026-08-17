@@ -5689,3 +5689,56 @@ body.typhoon-mode .console > #voice-panel .voice-transcript { flex: 1; max-width
 .bp-placeholder-icon { font-size: 32px; opacity: 0.7; }
 .bp-placeholder-title { font-size: 13px; color: var(--ink, #c8f0c8); font-weight: 600; }
 .bp-placeholder-desc { font-size: 11px; color: var(--ink2, #8fb48a); line-height: 1.6; }
+
+/* ═══ PTT 按住空格时的左侧面板动态反馈 ═══ */
+body.ptt-active #panel-l1 { border-color: rgba(100,255,218,0.45); }
+body.ptt-active .panel-identity { position: relative; }
+body.ptt-active .panel-identity::after {
+  content: ''; position: absolute; inset: -2px; border-radius: inherit;
+  border: 1.5px solid rgba(100,255,218,0.5);
+  animation: pttPanelPulse 1.2s ease-in-out infinite;
+  pointer-events: none; z-index: 5;
+}
+@keyframes pttPanelPulse {
+  0%, 100% { opacity: 0.25; box-shadow: 0 0 0 0 rgba(100,255,218,0.15); }
+  50% { opacity: 1; box-shadow: 0 0 22px 2px rgba(100,255,218,0.25); }
+}
+body.ptt-active #voice-btn {
+  background: #64ffda !important;
+  transform: scale(1.12);
+  animation: pttMicBounce 0.8s ease-in-out infinite;
+}
+@keyframes pttMicBounce {
+  0%, 100% { transform: scale(1.08); }
+  50% { transform: scale(1.2); }
+}
+body.ptt-active .ai-activity-label { color: #64ffda; }
+body.ptt-active .ai-activity-label::before { content: '🎙️ 录音中 '; }
+body.ptt-active #ai-activity-dot {
+  background: #ff4081 !important;
+  animation: pttDotBlink 0.6s ease-in-out infinite;
+}
+@keyframes pttDotBlink {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+/* 语音画布录音状态光晕 */
+body.ptt-active #voice-panel { box-shadow: inset 0 0 30px rgba(100,255,218,0.08); }
+
+/* ═══ Toast 提示 ═══ */
+.voice-toast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(10px);
+  background: rgba(10, 15, 22, 0.95);
+  border: 1px solid rgba(100,255,218,0.35);
+  border-radius: 24px;
+  padding: 10px 22px;
+  font-size: 13px; color: #c8f0c8;
+  z-index: 99998;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  backdrop-filter: blur(10px);
+}
+.voice-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.voice-toast.rec-on { border-color: rgba(100,255,218,0.5); color: #64ffda; }
+.voice-toast.rec-off { border-color: rgba(164,183,214,0.3); color: #8fb48a; }
+.voice-toast.rec-err { border-color: rgba(248,113,113,0.5); color: #f87171; }
