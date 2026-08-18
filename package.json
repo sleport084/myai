@@ -1,7 +1,7 @@
 {
   "name": "myai",
   "productName": "MyAI",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "MyAI — 桌面 AI Agent，持续运行的个人数字助手",
   "type": "module",
   "main": "electron/main.cjs",

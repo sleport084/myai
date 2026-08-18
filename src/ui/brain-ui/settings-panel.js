@@ -1228,6 +1228,7 @@ export function initSettingsPanel(API) {
   const settingsClearIgnoredBtn    = document.getElementById("settings-clear-ignored-btn");
 
   let pendingUpdateVersion = null;
+  let updateStage = "idle";   // 跟踪 updater 状态, 安装按钮守卫用(必须 downloaded 才能装)
   let removeUpdaterListener = null;
 
   function setUpdateStatusText(text, state = "idle") {
@@ -1263,7 +1264,7 @@ export function initSettingsPanel(API) {
 
   async function loadUpdateSettings() {
     syncUpdateSettings();
-    const bridge = window.xiaobailong;
+    const bridge = window.bailongma;
     if (!bridge?.isElectron) {
       if (settingsCurrentVersion) settingsCurrentVersion.textContent = "仅桌面端可用";
       if (settingsCheckUpdateBtn) settingsCheckUpdateBtn.disabled = true;
@@ -1277,6 +1278,7 @@ export function initSettingsPanel(API) {
 
     removeUpdaterListener = bridge.onUpdaterStatus?.((payload = {}) => {
       const stage = payload.stage || "idle";
+      updateStage = stage;   // 安装按钮守卫: 只有 downloaded 状态才允许 quitAndInstall
       const ver = payload.version || "";
       const percent = typeof payload.percent === "number" ? Math.round(payload.percent) : null;
 
@@ -1335,7 +1337,7 @@ export function initSettingsPanel(API) {
   });
 
   settingsCheckUpdateBtn?.addEventListener("click", async () => {
-    const bridge = window.xiaobailong;
+    const bridge = window.bailongma;
     if (!bridge?.isElectron) return;
     setUpdateStatusText("正在检查更新…", "checking");
     setUpdateFeedback("");
@@ -1353,7 +1355,7 @@ export function initSettingsPanel(API) {
   });
 
   settingsDownloadUpdateBtn?.addEventListener("click", async () => {
-    const bridge = window.xiaobailong;
+    const bridge = window.bailongma;
     if (!bridge?.isElectron) return;
     setUpdateStatusText("开始下载…", "downloading");
     showUpdateButtons({ check: false });
@@ -1366,7 +1368,13 @@ export function initSettingsPanel(API) {
   });
 
   settingsInstallUpdateBtn?.addEventListener("click", () => {
-    window.xiaobailong?.quitAndInstall?.();
+    // 守卫: 只有下载完成后才能安装,否则 electron-updater 报
+    // "No update filepath provided, can't quit and install"
+    if (updateStage !== "downloaded") {
+      setUpdateStatusText("请先等待更新下载完成", "error");
+      return;
+    }
+    window.bailongma?.quitAndInstall?.();
   });
 
   settingsIgnoreUpdateBtn?.addEventListener("click", () => {

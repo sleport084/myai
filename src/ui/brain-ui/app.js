@@ -5692,49 +5692,8 @@ function initTTSSettings() {
     syncUpdateSettings();
   });
 
-  settingsCheckUpdateBtn?.addEventListener("click", async () => {
-    const bridge = window.bailongma;
-    if (!bridge?.isElectron) return;
-    setUpdateStatusText("正在检查更新…", "checking");
-    setUpdateFeedback("");
-    showUpdateButtons({ checkDisabled: true, checkLabel: "检查中…" });
-    try {
-      const result = await bridge.checkForUpdates?.();
-      if (result?.ok === false && result?.message) {
-        setUpdateStatusText(`更新失败：${result.message}`, "error");
-        showUpdateButtons({ checkLabel: "重试" });
-      }
-    } catch (err) {
-      setUpdateStatusText(`更新失败：${err?.message || "请稍后再试"}`, "error");
-      showUpdateButtons({ checkLabel: "重试" });
-    }
-  });
 
-  settingsDownloadUpdateBtn?.addEventListener("click", async () => {
-    const bridge = window.bailongma;
-    if (!bridge?.isElectron) return;
-    setUpdateStatusText("开始下载…", "downloading");
-    showUpdateButtons({ check: false });
-    try {
-      await bridge.startDownload?.();
-    } catch (err) {
-      setUpdateStatusText(`下载失败：${err?.message || "请稍后再试"}`, "error");
-      showUpdateButtons({ checkLabel: "重试" });
-    }
-  });
 
-  settingsInstallUpdateBtn?.addEventListener("click", () => {
-    window.bailongma?.quitAndInstall?.();
-  });
-
-  settingsIgnoreUpdateBtn?.addEventListener("click", () => {
-    if (pendingUpdateVersion) {
-      localStorage.setItem(IGNORED_VERSION_KEY, pendingUpdateVersion);
-      syncUpdateSettings();
-    }
-    setUpdateStatusText("已忽略此版本", "muted");
-    showUpdateButtons({ checkLabel: "检查更新" });
-  });
 })();
 
 // ── Voice panel ──
