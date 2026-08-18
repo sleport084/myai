@@ -799,6 +799,25 @@ function useSkill(title) {
 
 function logout() { localStorage.removeItem('cloud_token'); token = null; location.reload() }
 
+// ── 版本检查: 服务器 H5 版本更新后自动刷新加载新版 ──
+(async function versionCheck() {
+  try {
+    const r = await fetch(ADMIN_API + '/api/version?platform=h5')
+    const v = await r.json()
+    if (v.version) {
+      const local = localStorage.getItem('h5_version')
+      if (local && local !== v.version) {
+        localStorage.setItem('h5_version', v.version)
+        location.reload(true)   // 服务器已更新 → 强制刷新加载新版
+        return
+      }
+      localStorage.setItem('h5_version', v.version)
+    }
+  } catch {}
+  // 每 5 分钟检查一次
+  setTimeout(versionCheck, 5 * 60 * 1000)
+})()
+
 init()
 </script>
 </body>

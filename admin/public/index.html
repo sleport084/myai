@@ -88,6 +88,7 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
       <span onclick="tab('skills',this)">技能市场</span>
       <span onclick="tab('media',this)">媒体API</span>
       <span onclick="tab('workflow',this)">工作流</span>
+      <span onclick="tab('version',this)">版本</span>
     </div>
     <button class="out" onclick="localStorage.removeItem('t');location.reload()">退出</button>
   </div>
@@ -311,6 +312,38 @@ td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.04)}
       </div>
     </div>
 
+    <!-- ═══ 版本管理(在线升级) ═══ -->
+    <div id="tab-version" style="display:none">
+      <div class="card">
+        <h3>📦 版本管理 <span class="badge">在线升级</span></h3>
+        <div class="desc">
+          发布流程: 本地构建 → 上传安装包+feed 文件到服务器 /updates/ → 在此登记版本。<br>
+          桌面端(mac/win)启动时自动检查 <code>https://zy.tangdou2027.top/updates/</code> 并提示升级; H5/后台即时生效(登记版本号供显示)。
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <div class="stat" style="max-width:140px"><div class="n" id="ver-latest-mac" style="font-size:16px">-</div><div class="l">桌面端最新</div></div>
+          <div class="stat" style="max-width:140px"><div class="n" id="ver-latest-h5" style="font-size:16px">-</div><div class="l">H5 最新</div></div>
+        </div>
+        <div id="ver-form" style="background:#0e0e1e;border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:20px;margin-bottom:16px">
+          <h4 style="font-size:14px;color:#64ffda;margin-bottom:14px">登记新版本</h4>
+          <div class="field"><label>平台</label>
+            <select id="ver-platform" style="flex:1;padding:9px 12px;background:#1a1a28;border:1px solid rgba(255,255,255,0.08);border-radius:8px;color:#e0e0e8;font-size:13px">
+              <option value="mac-x64">mac-x64</option><option value="mac-arm64">mac-arm64</option><option value="win">win</option>
+              <option value="h5">H5</option><option value="admin">admin</option>
+            </select>
+          </div>
+          <div class="field"><label>版本号</label><input id="ver-version" placeholder="如 0.0.3"></div>
+          <div class="field"><label>更新说明</label><input id="ver-notes" placeholder="如: 修复语音+新增工作流"></div>
+          <div class="field"><label>下载链接</label><input id="ver-url" placeholder="https://zy.tangdou2027.top/updates/MyAI-0.0.3-mac-x64.dmg"></div>
+          <div class="save-bar"><button onclick="saveVersion()">登记版本</button></div>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>平台</th><th>版本</th><th>说明</th><th>发布时间</th></tr></thead>
+          <tbody id="ver-list"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ═══ 媒体 API(多米)═══ -->
     <div id="tab-media" style="display:none">
       <div class="card">
@@ -367,8 +400,9 @@ async function showDash() {
 function tab(id, el) {
   document.querySelectorAll('.topbar .nav span').forEach(s => s.classList.remove('active'))
   el.classList.add('active')
-  ;['users','brand','llm','oss','skills','workflow','media'].forEach(t => document.getElementById('tab-'+t).style.display = t === id ? '' : 'none')
+  ;['users','brand','llm','oss','skills','workflow','version','media'].forEach(t => document.getElementById('tab-'+t).style.display = t === id ? '' : 'none')
   if (id === 'workflow') loadWorkflowTab()
+  if (id === 'version') loadVersions()
 }
 function togKey(id, el) {
   const inp = document.getElementById(id)
@@ -861,6 +895,35 @@ async function delCron(id) {
   if (!confirm('删除定时任务?')) return
   await fetch(API + `/api/cron-jobs/${id}`, { method:'DELETE', headers:{Authorization:'Bearer '+token} })
   loadCrons()
+}
+
+// ═══ 版本管理 ═══
+async function loadVersions() {
+  const r = await fetch(API + '/api/admin/versions', { headers: { Authorization: 'Bearer ' + token } })
+  if (!r.ok) return
+  const d = await r.json()
+  const vs = d.versions || []
+  const latestMac = vs.find(v => v.platform === 'mac-xac'.replace('c','6') + '4') || vs.find(v => v.platform.startsWith('mac'))
+  const latestH5 = vs.find(v => v.platform === 'h5')
+  const el1 = document.getElementById('ver-latest-mac'); if (el1 && latestMac) el1.textContent = latestMac.version
+  const el2 = document.getElementById('ver-latest-h5'); if (el2 && latestH5) el2.textContent = latestH5.version
+  document.getElementById('ver-list').innerHTML = vs.map(v => `<tr>
+    <td>${v.id}</td><td>${v.platform}</td><td><b>${v.version}</b></td>
+    <td><small style="color:#7a7a9a">${esc2(v.notes||'')}</small></td>
+    <td>${(v.created_at||'').slice(0,16)}</td>
+  </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;color:#7a7a9a">暂无版本</td></tr>'
+}
+async function saveVersion() {
+  const body = {
+    platform: document.getElementById('ver-platform').value,
+    version: document.getElementById('ver-version').value.trim(),
+    notes: document.getElementById('ver-notes').value.trim(),
+    file_url: document.getElementById('ver-url').value.trim(),
+  }
+  if (!body.version) { alert('版本号必填'); return }
+  const r = await fetch(API + '/api/admin/versions', { method: 'POST', headers: authHeaders(), body: JSON.stringify(body) })
+  const d = await r.json()
+  if (r.ok) { alert('已登记'); loadVersions() } else alert('失败: ' + (d.error||''))
 }
 </script>
 </body>

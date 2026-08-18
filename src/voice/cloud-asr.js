@@ -31,6 +31,7 @@ function createAliyunSession(apiKey, lang, onTranscript, onError, onClose, onEve
   })
 
   ws.on('open', () => {
+    console.log('[aliyun-asr] WS 已连接, 发送 run-task')
     const langCode = (lang === 'zh' || !lang) ? 'zh' : lang
     ws.send(JSON.stringify({
       header: { action: 'run-task', task_id: taskId, streaming: 'duplex' },
@@ -69,10 +70,12 @@ function createAliyunSession(apiKey, lang, onTranscript, onError, onClose, onEve
           onTranscript(sentence.text, isFinal, seg)
         }
       } else if (event === 'task-failed') {
+        console.log('[aliyun-asr] task-failed:', msg?.header?.error_message, msg?.header?.error_code)
         onEvent?.('task-failed', msg?.header?.error_message)
         onError(msg?.header?.error_message || '阿里云 ASR 错误')
       } else {
         // task-started / task-finished / 其它：转发给前端诊断（result-generated 太频繁不转）
+        console.log('[aliyun-asr] 事件:', event)
         onEvent?.(event)
         // Aliyun 在我们没主动 finish 的情况下自己结束了任务（疑似超长单任务上限）→
         // 关掉这条连接，触发前端重连续上（重连会保住前文 + 缓冲音频，识别接着走）。

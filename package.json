@@ -1,7 +1,7 @@
 {
   "name": "myai",
   "productName": "MyAI",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "MyAI — 桌面 AI Agent，持续运行的个人数字助手",
   "type": "module",
   "main": "electron/main.cjs",
@@ -151,12 +151,11 @@
     },
     "publish": [
       {
-        "provider": "github",
-        "owner": "xiaoyuanda666-ship-it",
-        "repo": "BaiLongma",
-        "releaseType": "release"
+        "provider": "generic",
+        "url": "https://zy.tangdou2027.top/updates"
       }
-    ]
+    ],
+    "afterPack": "./scripts/afterSign.cjs"
   },
   "optionalDependencies": {
     "sherpa-onnx-darwin-arm64": "^1.13.3",

@@ -811,6 +811,27 @@ app.on('activate', () => {
 app.whenReady().then(async () => {
   Menu.setApplicationMenu(null)
 
+  // macOS: 主动触发麦克风 TCC 授权弹窗(应用重签/重建后权限会失效,静音采集不报错)
+  if (process.platform === 'darwin') {
+    try {
+      const granted = systemPreferences.getMediaAccessStatus('microphone')
+      console.log('[main] 麦克风权限状态:', granted)
+      if (granted === 'not-determined') {
+        // Electron API: askMediaAccess(不是 askUserMediaAccess)
+        const ask = systemPreferences.askMediaAccess || systemPreferences.askUserMediaAccess
+        if (typeof ask === 'function') {
+          const result = await ask.call(systemPreferences, 'microphone')
+          console.log('[main] 麦克风授权请求结果:', result)
+        } else {
+          // 兜底: 渲染进程 getUserMedia 也会触发 TCC 弹窗
+          console.log('[main] askMediaAccess 不可用, 将由渲染进程 getUserMedia 触发授权')
+        }
+      } else if (granted !== 'granted') {
+        console.warn('[main] ⚠️ 麦克风权限被拒绝,请在 系统设置→隐私与安全性→麦克风 中允许 MyAI')
+      }
+    } catch (e) { console.warn('[main] 麦克风权限检查失败:', e.message) }
+  }
+
   // ── 云端认证检查(参考小裂变 SessionManager:凭据加密存储 + token 自动续期) ──
   const CLOUD_AUTH_URL = process.env.CLOUD_AUTH_URL || 'https://zy.tangdou2027.top/admin'
   const TOKEN_FILE = path.join(USER_DIR, '.cloud-auth-token')

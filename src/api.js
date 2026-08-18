@@ -1980,6 +1980,7 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
   cloudWss.on('connection', (ws) => {
     let session = null
     let configured = false
+    let audioChunks = 0, lastDiagAt = Date.now()
 
     ws.on('message', (raw) => {
       // First frame must be a JSON config frame
@@ -1987,6 +1988,7 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
         try {
           const msg = JSON.parse(raw.toString())
           if (msg.type !== 'config') return
+          console.log('[voice-relay] 收到 config:', msg.provider, msg.lang)
           // Read raw credentials from config.json
           let rawCfg = {}
           try { rawCfg = JSON.parse(fs.readFileSync(paths.configFile, 'utf-8'))?.voice || {} } catch {}
@@ -1994,6 +1996,7 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
           session = createCloudASRSession(
             { provider, lang: msg.lang || 'zh', ...rawCfg },
             (text, isFinal, seg) => {
+              console.log(`[voice-relay] transcript(${isFinal ? 'final' : 'interim'}): ${text.slice(0, 50)}`)
               try { ws.send(JSON.stringify({ type: 'transcript', text, is_final: isFinal, seg })) } catch {}
             },
             (errMsg) => {
@@ -2011,6 +2014,11 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
       }
       // Subsequent frames are PCM binary
       if (raw instanceof Buffer) {
+        audioChunks++
+        if (Date.now() - lastDiagAt > 5000) {
+          console.log(`[voice-relay] 音频流中: ${audioChunks} 块 (${(audioChunks * raw.length / 1024).toFixed(0)}KB), session=${session ? 'ok' : 'NULL'} 缓冲中=${session?.pending?.length ?? '-'}`)
+          lastDiagAt = Date.now()
+        }
         session?.sendAudio(raw)
       } else {
         try {

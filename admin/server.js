@@ -1318,6 +1318,37 @@ const server = http.createServer(async (req, res) => {
       })(req, res); if (r) sj(res, r.status, r.body); return
     }
 
+    // ═══ 版本管理(在线升级) ═══
+    // GET /api/version?platform=mac-x64 — 公开, 客户端检查更新
+    if (m === 'GET' && p === '/api/version') {
+      const platform = rawUrl.searchParams.get('platform') || ''
+      const [rows] = await pool.query(
+        'SELECT platform, version, notes, file_url, created_at FROM app_versions WHERE platform=? ORDER BY id DESC LIMIT 1',
+        [platform]
+      )
+      sj(res, 200, rows[0] || { platform, version: null })
+      return
+    }
+
+    // GET /api/admin/versions — 管理员: 全部版本历史
+    if (m === 'GET' && p === '/api/admin/versions') {
+      const r = await adminOnly(async () => {
+        const [rows] = await pool.query('SELECT * FROM app_versions ORDER BY id DESC LIMIT 50')
+        return { status: 200, body: { versions: rows } }
+      })(req, res); if (r) sj(res, r.status, r.body); return
+    }
+
+    // POST /api/admin/versions — 管理员: 发布新版本
+    if (m === 'POST' && p === '/api/admin/versions') {
+      const r = await adminOnly(async (req) => {
+        const b = await rb(req)
+        if (!b.platform || !b.version) return { status: 400, body: { error: '缺少 platform/version' } }
+        await pool.query('INSERT INTO app_versions(platform, version, notes, file_url) VALUES(?,?,?,?)',
+          [b.platform, b.version, b.notes || '', b.file_url || ''])
+        return { status: 200, body: { ok: true } }
+      })(req, res); if (r) sj(res, r.status, r.body); return
+    }
+
     // ═══ 静态页面 ═══
     if (m === 'GET' && (p === '/' || p === '/index.html')) {
       const { readFileSync } = await import('fs')
