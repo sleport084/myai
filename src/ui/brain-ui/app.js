@@ -1,4 +1,4 @@
-﻿import { renderBrainUiApp } from "./app-shell.js";
+import { renderBrainUiApp } from "./app-shell.js";
 import { API, getUiClientId, isUiClientTarget } from "./api-client.js";
 import { bootstrapScene } from "../scene-shell/bootstrap.js";
 import { initChat, friendlyChannelLabel } from "./chat.js";
@@ -6383,17 +6383,36 @@ initTyphoon();
     } catch (e) { console.log("[image] save failed", e.message); }
   });
 
-  // 点击图片:全屏预览(放大查看,ESC/点击关闭)
+  // 点击图片:全屏预览(放大查看,ESC/点击空白关闭)
+  // 修复:img 默认可拖拽,点击图片时鼠标轻微移动会触发拖拽并吞掉 click 事件,
+  // 导致"点关闭没反应"。加 draggable=false + 显式绑定 × 按钮 + 区分点击目标。
   imageDisplay?.addEventListener("click", () => {
     const src = imageDisplay.src;
     if (!src) return;
     const overlay = document.createElement("div");
     overlay.className = "image-fullscreen-overlay";
-    overlay.innerHTML = `<img src="${src}" class="image-fullscreen-img" /><button class="image-fullscreen-close" title="关闭(ESC)">×</button>`;
-    overlay.addEventListener("click", () => overlay.remove());
-    document.addEventListener("keydown", function escClose(e) {
-      if (e.key === "Escape") { overlay.remove(); document.removeEventListener("keydown", escClose); }
+    overlay.innerHTML =
+      `<img src="${src}" class="image-fullscreen-img" draggable="false" alt="" />` +
+      `<button class="image-fullscreen-close" type="button" title="关闭(ESC)">×</button>`;
+    const close = () => {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+    };
+    // × 按钮:独立绑定并阻止冒泡,点击必关
+    const closeBtn = overlay.querySelector(".image-fullscreen-close");
+    closeBtn?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      close();
     });
+    // 点击遮罩空白处关闭;点击图片本身不关闭(方便仔细看图)
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    // ESC 关闭;关闭时同步移除监听器,避免泄漏
+    function onKey(e) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("keydown", onKey);
     document.body.appendChild(overlay);
   });
 
