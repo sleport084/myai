@@ -6399,9 +6399,10 @@ initTyphoon();
     } catch (e) { console.log("[image] save failed", e.message); }
   });
 
-  // 点击图片:全屏预览(放大查看,ESC/点击空白关闭)
-  // 修复:img 默认可拖拽,点击图片时鼠标轻微移动会触发拖拽并吞掉 click 事件,
-  // 导致"点关闭没反应"。加 draggable=false + 显式绑定 × 按钮 + 区分点击目标。
+  // 点击图片:全屏预览(放大查看,点击图片/空白/×/ESC 均可关闭)
+  // 修复①:img 默认可拖拽,点击时鼠标轻微移动会触发拖拽并吞掉 click 事件,
+  //        导致"点关闭没反应"。加 draggable=false 根治。
+  // 修复②:点击图片本身也关闭(用户习惯),与空白、×、ESC 行为一致。
   imageDisplay?.addEventListener("click", () => {
     const src = imageDisplay.src;
     if (!src) return;
@@ -6420,10 +6421,8 @@ initTyphoon();
       e.stopPropagation();
       close();
     });
-    // 点击遮罩空白处关闭;点击图片本身不关闭(方便仔细看图)
-    overlay.addEventListener("click", (e) => {
-      if (e.target === overlay) close();
-    });
+    // 点击遮罩任意处(包括图片本身)均关闭——符合用户"点哪都关"的直觉
+    overlay.addEventListener("click", () => close());
     // ESC 关闭;关闭时同步移除监听器,避免泄漏
     function onKey(e) {
       if (e.key === "Escape") close();
