@@ -5669,7 +5669,9 @@ body.typhoon-mode .console > #voice-panel .voice-transcript { flex: 1; max-width
 .action-view-popout:hover { color: var(--accent, #64ffda); }
 
 /* web 模式: 日志区让位, 浏览器视口占满整个模块 */
-.action-log-module[data-view="web"] .action-log-surface { display: none; }
+/* 注意: 只隐藏日志内容(.action-log), 保留标题和 📋/🌐 切换按钮,
+   否则切到 web 后按钮一起消失, 用户无法切回记录视图 */
+.action-log-module[data-view="web"] .action-log { display: none; }
 .action-log-module[data-view="web"] .browser-preview {
   display: block; position: relative;
   flex: 1; min-height: 100%;

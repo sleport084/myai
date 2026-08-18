@@ -1238,15 +1238,31 @@ function setActionView(mode) {
   document.getElementById("action-view-web-btn")?.classList.toggle("active", actionViewMode === "web");
   const popBtn = document.getElementById("action-view-popout-btn");
   if (popBtn) popBtn.hidden = actionViewMode !== "web";
+  // 视图切换时清理浏览器预览的过渡/残留状态,避免日志被永久隐藏
+  clearBrowserPreviewTransition();
   if (actionViewMode === "web") {
     // 展示视口: 有活跃页面显示页面,否则占位提示
+    // 恢复日志元素可见性,由 CSS([data-view=web] .action-log)负责隐藏日志内容,
+    // 避免浏览器预览流程遗留的 actionLog.hidden=true 把日志永久锁死
+    if (actionLogEl) actionLogEl.hidden = false;
+    actionLogSurfaceEl?.setAttribute("aria-hidden", "false");
     if (browserPreviewEl) { browserPreviewEl.hidden = false; browserPreviewEl.setAttribute("aria-hidden", "false"); }
     updateBrowserPlaceholder();
     if (browserPreviewActive) scheduleNativeBrowserEmbedSync();
     else if (browserEmbedBridge) callBrowserEmbed("getState");  // 可能有仍存活的页面,查询恢复
   } else {
+    // log 模式: 显式恢复日志显示,并隐藏浏览器视口(无论是否有活跃页面)
+    if (actionLogEl) actionLogEl.hidden = false;
+    actionLogSurfaceEl?.setAttribute("aria-hidden", "false");
+    if (mod) {
+      delete mod.dataset.browserActive;
+      delete mod.dataset.browserPhase;
+    }
+    if (browserPreviewEl) {
+      browserPreviewEl.hidden = true;
+      browserPreviewEl.setAttribute("aria-hidden", "true");
+    }
     updateBrowserPlaceholder();
-    if (!browserPreviewActive && browserPreviewEl) browserPreviewEl.hidden = true;
   }
 }
 
