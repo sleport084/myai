@@ -244,6 +244,7 @@ export const TOOL_GROUPS = [
   { triggers: MUSIC_GEN_TRIGGERS,    tools: [MM_GEN_TOOLS.music] },
   { triggers: IMAGE_GEN_TRIGGERS,    tools: [MM_GEN_TOOLS.image] },
   { triggers: VIDEO_GEN_TRIGGERS,    tools: ['generate_video'] },
+  { triggers: WECHAT_UI_TRIGGERS,    tools: WECHAT_UI_TOOLS },
   { triggers: REVIEW_TRIGGERS,       tools: REVIEW_TOOLS },
 ]
 
@@ -400,6 +401,10 @@ export function selectTools(ctx = {}) {
   }
   if (hits(body, ADMIN_TRIGGERS)) {
     for (const t of ADMIN_TOOLS) out.add(t)
+  }
+  // 微信 UI Agent: 用户提到微信/朋友圈/群聊等 → 注入 wechat_* 工具
+  if (hits(body, WECHAT_UI_TRIGGERS)) {
+    for (const t of WECHAT_UI_TOOLS) out.add(t)
   }
   // 成果审视：有任务时已随 TASK_CTRL_FULL 注入；这里覆盖"无任务但用户明确要求检查/验收成果"的临时场景。
   if (hits(body, REVIEW_TRIGGERS)) {
