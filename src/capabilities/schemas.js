@@ -15,6 +15,7 @@ import { systemSchemas } from './schemas/system.js'
 import { sceneSchemas } from './schemas/scene.js'
 import { apiCapabilitySchemas } from './schemas/api-capabilities.js'
 import { workflowSchemas } from './schemas/workflow.js'
+import { wechatSchemas } from './schemas/wechat.js'
 
 // 所有工具的 schema 定义（按类别拆分到 ./schemas/*.js，此处合并）。
 // 调用方按需用 getToolSchemas(toolNames) 取子集，合并顺序不影响输出顺序。
@@ -34,6 +35,7 @@ export const TOOL_SCHEMAS = {
   ...sceneSchemas,
   ...apiCapabilitySchemas,
   ...workflowSchemas,
+  ...wechatSchemas,
 }
 
 // 根据名称列表获取 schema 数组（含已安装工具）

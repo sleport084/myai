@@ -211,6 +211,12 @@ const VIDEO_GEN_TRIGGERS = [
   'generate video', 'text to video', 'image to video', 'make a video', 'create a video',
 ]
 
+const WECHAT_UI_TOOLS = ['wechat_snapshot', 'wechat_click', 'wechat_type', 'wechat_key', 'wechat_find']
+const WECHAT_UI_TRIGGERS = [
+  '微信', 'wechat', 'weixin', '朋友圈', '群聊', '聊天窗口',
+  '发微信', '微信发', '微信回复', '微信消息',
+]
+
 const REVIEW_TRIGGERS = [
   '检查成果', '检查一下成果', '审视', '复查', '核对', '把关', '验收', '自检',
   '检查工作', '检查我做的', '再检查', '复核', '查验',

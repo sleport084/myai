@@ -1108,6 +1108,23 @@ export function startAPI(port = 3721, { getStateSnapshot = null, onActivated = n
       return
     }
 
+    // GET /media/wechat/:filename — serve WeChat UI agent screenshots
+    if (req.method === 'GET' && url.pathname.startsWith('/media/wechat/')) {
+      const raw = url.pathname.slice('/media/wechat/'.length)
+      const filename = path.basename(decodeURIComponent(raw))
+      const dir = path.join(SANDBOX_PATH, 'media', 'wechat')
+      const filePath = path.join(dir, filename)
+      const resolved = path.resolve(filePath)
+      const dirResolved = path.resolve(dir)
+      if (!resolved.startsWith(dirResolved + path.sep)) { res.writeHead(403); res.end('forbidden'); return }
+      try {
+        const stat = fs.statSync(filePath)
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': stat.size, 'Cache-Control': 'no-cache' })
+        fs.createReadStream(filePath).pipe(res)
+      } catch { res.writeHead(404); res.end('not found') }
+      return
+    }
+
     // GET /audio/:filename — serve sandbox audio files
     if (req.method === 'GET' && url.pathname.startsWith('/audio/')) {
       const filename = path.basename(url.pathname)

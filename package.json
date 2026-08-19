@@ -74,7 +74,8 @@
       "**/node_modules/@huggingface/transformers/**",
       "**/node_modules/sherpa-onnx-*/**",
       "**/node_modules/sherpa-onnx-node/**",
-      "src/voice/**"
+      "src/voice/**",
+      "src/wechat/**"
     ],
     "files": [
       "electron/**/*",

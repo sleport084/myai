@@ -292,6 +292,16 @@ export function startClawbotConnector({ pushMessage, emitEvent } = {}) {
         const reason = result?.message || '未知原因'
         console.warn(`[ClawBot] 扫码登录未完成: ${reason}`)
         emitEvent?.('social_status', { platform: 'wechat-clawbot', status: 'idle', reason })
+        // QR 过期/超时 → 2 分钟后自动重新发起扫码(用户扫码成功即跳出)
+        if (/expired|timeout/i.test(reason)) {
+          setTimeout(() => {
+            if (clawbotStatus === 'idle' && !getClawbotCredentials()) {
+              console.log('[ClawBot] 自动重新发起扫码登录...')
+              try { client?.stop?.() } catch {}
+              startClawbotConnector({ pushMessage, emitEvent })
+            }
+          }, 120000)
+        }
         return
       }
       clawbotStatus = 'connected'
