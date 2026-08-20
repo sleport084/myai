@@ -9,7 +9,11 @@ import { emitEvent } from '../../events.js'
 import { paths } from '../../paths.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const SWIFT_HELPER = path.join(__dirname, '..', '..', 'wechat', 'wechat-ui.swift')
+// Electron 打包后 .swift 在 app.asar.unpacked(execFile 不走 asar 透明重定向,必须显式指向 unpacked)
+let SWIFT_HELPER = path.join(__dirname, '..', '..', 'wechat', 'wechat-ui.swift')
+if (SWIFT_HELPER.includes('app.asar' + path.sep)) {
+  SWIFT_HELPER = SWIFT_HELPER.replace('app.asar' + path.sep, 'app.asar.unpacked' + path.sep)
+}
 const IS_MAC = process.platform === 'darwin'
 
 // swift 解释执行(开发/打包后都可用, asar 内 .swift 会被 unpack)
